@@ -7,77 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2025-10-18
 
-### Added - Initial Release
-- Complete local-first password manager implementation
-- Core vault functionality with strong encryption:
-  - Argon2id key derivation function (time_cost=3, memory_cost=65536 KB, parallelism=1)
-  - AES-256-GCM authenticated encryption
-  - JSON-based vault format with metadata and entries
-  - Secure random salt generation (16 bytes per vault)
-- Entry management features:
-  - Create, read, update, and delete password entries
-  - Each entry includes: title, username, password, notes, timestamps
-  - UUID-based entry identification
-- PyQt5-based desktop GUI with dark theme (black/grey/white/red color scheme):
-  - Welcome screen with options to create, import, or open vault
-  - Master password dialogs with confirmation for new vaults
-  - Main window with entry list and detail views
-  - Add/Edit entry dialogs with password generation
-  - Password visibility toggle in entry dialogs
-  - Strong password generator (20 characters, mixed alphanumeric and symbols)
-  - **System tray integration**: Minimize to tray, run in background, double-click to restore
-  - **Encrypted clipboard**: Passwords encrypted with AES-256-GCM before copying (prevents telemetry/snooping)
-  - Copy password to clipboard functionality with auto-clear after 30 seconds
-  - Clipboard history panel showing last 30 copied passwords (refreshes daily)
-  - Double-click clipboard history items to copy again
-  - Keyboard shortcuts for common actions (Copy: Ctrl+C, New: Ctrl+N, Edit: Ctrl+E, Delete: Del, Lock: Ctrl+L, Find: Ctrl+F)
-  - Lock vault feature to secure application when idle
-  - Close button minimizes to tray instead of quitting application
-- Vault import/export functionality:
-  - Export entire vault to encrypted backup file
-  - Import vault from backup to new location
-  - Cross-device transfer support via encrypted files
-- Cross-platform support:
-  - Windows and Linux compatibility
-  - Installation scripts for both platforms (install.bat, install.sh)
-  - Uninstallation scripts (uninstall.bat, uninstall.sh)
-- Packaging and distribution:
-  - setup.py for pip installation
-  - pyproject.toml for modern Python packaging
-  - Entry points for command-line execution
-  - MANIFEST.in for package data
-- Build and development tools:
-  - POSIX-compliant build.sh script for automated setup
-  - Virtual environment management
-  - Dependency installation automation
-- Testing infrastructure:
-  - Unit tests for core vault operations (8 tests)
-  - Integration tests for complete workflows
-  - Tests for encryption/decryption
-  - Tests for entry CRUD operations
-  - Tests for import/export functionality
-- Documentation:
-  - Comprehensive README with installation, usage, and uninstallation instructions
-  - SECURITY.md with detailed security model and threat analysis
-  - TESTING.md with comprehensive testing procedures
-  - QUICKREF.md with quick reference guide and keyboard shortcuts
-  - CHANGELOG.md following Keep a Changelog format
-  - docs/ENHANCED_FEATURES.md for clipboard and keyboard features
-  - docs/CLIPBOARD_HISTORY.md for clipboard history documentation
-  - docs/IMPLEMENTATION_SUMMARY.md for technical details
+### Added
+- Complete local-first password manager with strong encryption
+- AES-256-GCM authenticated encryption with Argon2id key derivation
+  - Time cost: 3 iterations, Memory: 64 MB, Parallelism: 1 thread
+  - Unique 16-byte salt per vault
+- PyQt5 desktop GUI with dark theme (black/grey/white/red)
+  - Welcome screen (create/import/open vault)
+  - Entry management (add/edit/delete with title, username, password, notes)
+  - Password generator (20 characters, cryptographically secure)
+  - Password visibility toggle
+- System tray integration
+  - Minimize to tray and run in background
+  - Double-click tray icon to show/hide
+  - Right-click menu (show/lock/quit)
+  - Close button minimizes instead of quitting
+- Encrypted clipboard feature
+  - AES-256-GCM encryption before copying to system clipboard
+  - Session-unique encryption key
+  - Prevents OS telemetry and clipboard snooping
+  - Auto-clear after 30 seconds
+- Clipboard history panel
+  - Shows last 30 copied passwords
+  - Double-click to copy again
+  - Automatically refreshes each new day
+- Keyboard shortcuts
+  - Ctrl+C: Copy password
+  - Ctrl+N: New entry
+  - Ctrl+E: Edit entry
+  - Delete: Delete entry
+  - Ctrl+L: Lock vault
+  - Ctrl+F: Focus/find entry
+- Vault import/export for encrypted backups and device transfer
+- Cross-platform installation scripts (Windows: install.bat, Linux/Mac: install.sh)
+- Uninstallation scripts that preserve vault files
+- Python package setup (setup.py, pyproject.toml) with pip installation support
+- Command-line entry points (`pwick` command)
+- Comprehensive test suite (8 unit tests + integration tests)
 
 ### Security
 - Master password never stored on disk
 - Strong key derivation prevents brute-force attacks
 - Authenticated encryption prevents tampering
 - No network connections or external API calls
-- Complete local-first architecture ensures data privacy
-- **Encrypted clipboard prevents telemetry and clipboard snooping**
-- **Session-unique encryption key for clipboard data**
-- Clipboard auto-clear after 30 seconds
-- Daily refresh of clipboard history for security
+- Encrypted clipboard prevents telemetry
+- Session-unique encryption keys
+- Daily clipboard history refresh
 
-### Fixed
-- Timezone-aware datetime handling (no deprecation warnings)
-- Proper error handling for vault authentication failures
-- Secure file operations with proper permissions
+### Documentation
+- README with installation, usage, and security details
+- CHANGELOG following Keep a Changelog format
+- SECURITY policy and threat model
+- TESTING procedures
+- QUICKREF with keyboard shortcuts
+- Comprehensive inline code documentation
