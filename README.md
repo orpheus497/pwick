@@ -1,127 +1,148 @@
 # pwick 🛡️
-_A simple, secure, and 100% local password manager._
-
-pwick is a cross-platform password manager built for users who demand absolute privacy. Your data **never** leaves your computer, is **never** sent to a server, and is **always** protected by strong, internal encryption.
+**Version 1.0.0** - _A simple, secure, and 100% local password manager._
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue) ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Python](https://img.shields.io/badge/python-3.7%2B-blue)
 
----
+pwick is a cross-platform password manager built for users who demand absolute privacy. Your data never leaves your computer, is never sent to a server, and is always protected by strong encryption.
 
-## Philosophy: Your Data is Yours. Period.
+## Philosophy
 
-In an age of constant cloud syncing and data breaches, pwick is intentionally different. We believe your most sensitive information—your passwords—should remain completely and totally under your control.
+Your most sensitive information—your passwords—should remain completely under your control.
 
-* **No Cloud:** There is no "sync" feature. There are no servers. Your vault is a single file on your local disk.
-* **No Tracking:** The application includes no analytics, no tracking pixels, and no network "check-ins."
+* **No Cloud:** Your vault is a single file on your local disk.
+* **No Tracking:** No analytics, no tracking pixels, no network connections.
 * **Total Privacy:** You are the only person who can access your data.
 
 ---
 
 ## Features
 
-* 🔒 **100% Local-First:** Your vault is a single, encrypted file on your computer.
-* 🔑 **Strong Encryption:** Your entire vault is encrypted using [**Specify Algorithm, e.g., AES-256**] with a key derived from your Master Password.
-* 💻 **Cross-Platform:** Works natively on both **Windows** and **Linux**.
-* 🔄 **Easy Backup & Transfer:** Securely export your *entire* encrypted vault to a single file. Move it to a new device via a USB drive (or any other method) and import it seamlessly.
-* ✨ **Simple Interface:** A clean, no-nonsense UI focused on one thing: managing your passwords securely.
+### Security
+* **Encryption:** AES-256-GCM authenticated encryption with Argon2id key derivation
+  - Time cost: 3 iterations, Memory cost: 64 MB, Parallelism: 1 thread
+  - Unique 16-byte salt per vault
+  - Prevents brute-force, dictionary, and rainbow table attacks
+* **Master Password:** Never stored on disk, exists only in memory when unlocked
+* **Encrypted Clipboard:** Passwords encrypted with AES-256-GCM before copying to system clipboard
+  - Prevents OS telemetry and clipboard snooping
+  - Session-unique encryption key
+  - Auto-clears after 30 seconds
+* **Import/Export:** Encrypted backup functionality for vault transfer
+
+### Interface
+* **Cross-Platform:** Windows and Linux native support
+* **Dark Theme:** Black, grey, white, and red color scheme
+* **System Tray:** Minimize to tray, run in background, double-click to restore
+* **Keyboard Shortcuts:** 
+  - Ctrl+C: Copy password | Ctrl+N: New entry | Ctrl+E: Edit entry
+  - Delete: Delete entry | Ctrl+L: Lock vault | Ctrl+F: Find/focus
+* **Clipboard History:** Panel showing last 30 copied items (refreshes daily)
+* **Password Generator:** 20-character strong passwords with show/hide toggle
+* **Entry Management:** Create, edit, delete entries with title, username, password, notes
+
+---
+
+## Screenshots
+
+![Welcome Screen](docs/screenshots/welcome_screen.png)
+![Entry Dialog](docs/screenshots/entry_dialog.png)
 
 ---
 
 ## Installation
 
-### From Releases
+### Quick Install
 
-This is the easiest way to get started.
+**Windows:**
+```cmd
+install.bat
+```
 
-1.  Go to the [**Releases Page**](httpsa://github.com/YourUsername/pwick/releases).
-2.  Download the latest file for your operating system:
-    * **Windows:** `pwick-v1.0.exe` (or `.msi`)
-    * **Linux:** `pwick-v1.0.AppImage` (or `.deb`/`.rpm`)
-3.  (For Linux .AppImage) Make the file executable:
-    ```bash
-    chmod +x pwick-v1.0.AppImage
-    ```
-4.  Run the application.
+**Linux/Mac:**
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+After installation, run from anywhere:
+```bash
+pwick
+```
 
 ### Build From Source
 
-If you prefer to build the project yourself:
+```bash
+# Clone repository
+git clone https://github.com/orpheus497/pwick.git
+cd pwick
 
-1.  Clone the repository:
-    ```bash
-    git clone [https://github.com/YourUsername/pwick.git](https://github.com/YourUsername/pwick.git)
-    cd pwick
-    ```
-2.  [**Add your build instructions here**]
-    *(e.g., `npm install`, `npm run build`, or `make`, etc.)*
+# Automated build
+chmod +x build.sh
+./build.sh
 
----
+# Manual build
+python3 -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-## How to Use
+# Run
+python -m src.pwick
+```
 
-### 1. First-Time Setup
-
-When you first launch the application, you will be asked to create a new vault.
-
-1.  Choose **"Create New Vault"**.
-2.  Set your **Master Password**.
-
-**⚠️ IMPORTANT: Your Master Password is the *only* key to your data. It is never stored by us and cannot be recovered. If you forget your Master Password, your data is lost forever. Write it down and store it somewhere safe.**
-
-### 2. Daily Use
-
-* Use your Master Password to unlock your vault.
-* Add, edit, copy, or delete your password entries.
-* Lock the vault when you step away from your computer to keep it secure.
+**Requirements:** Python 3.7+, PyQt5, cryptography, argon2-cffi, pyperclip (installed automatically)
 
 ---
 
-## Backup and Device Transfer
+## Uninstallation
 
-You can easily move your *entire* vault between devices without any cloud service.
+**Windows:** `uninstall.bat`  
+**Linux/Mac:** `./uninstall.sh`  
+**Manual:** `pip uninstall pwick`
 
-### To Export (Backup)
-
-1.  Unlock your vault.
-2.  Navigate to `File > Export Encrypted Vault`.
-3.  Choose a name and location to save your encrypted file (e.g., `my-pwick-vault.encrypted`).
-4.  Securely copy this single file to a USB drive or other offline media.
-
-This file contains all your data, but it remains fully encrypted by your Master Password.
-
-### To Import (Transfer to New Device)
-
-1.  Install pwick on your new computer.
-2.  Copy your exported file (e.g., `my-pwick-vault.encrypted`) to the new device.
-3.  On the application's welcome screen, choose **"Import Existing Vault"**.
-4.  Select your file.
-5.  Enter the **same Master Password** you used to create the vault.
-
-Your vault will be decrypted and loaded locally on the new machine.
+*Note: Vault files are NOT deleted for safety.*
 
 ---
 
-## Security Model
+## Usage
 
-* **Encryption at Rest:** Your local vault file is fully encrypted using [**Specify Algorithm, e.g., AES-256-GCM**].
-* **Key Derivation:** Your Master Password is run through a strong key derivation function ([**Specify KDF, e.g., Argon2id or PBKDF2**]) to create the encryption key. This makes brute-force attacks much more difficult.
-* **No Plaintext:** Your Master Password is never stored on disk, not even in a hashed form. It is only held in memory when the vault is unlocked.
+### First-Time Setup
+1. Launch pwick
+2. Choose "Create New Vault"
+3. Set your Master Password
+
+**⚠️ IMPORTANT:** Your Master Password cannot be recovered. If forgotten, your data is permanently inaccessible.
+
+### Daily Use
+* Unlock vault with Master Password
+* Add, edit, copy, or delete password entries
+* **Copy passwords:** Click "Copy Password" or press `Ctrl+C` (auto-clears after 30 seconds)
+* **Clipboard History:** View last 30 copies, double-click to reuse (refreshes daily)
+* **System Tray:** Close window to minimize to tray, double-click tray icon to restore
+* **Keyboard Shortcuts:**
+  - `Ctrl+C`: Copy password | `Ctrl+N`: New entry | `Ctrl+E`: Edit
+  - `Delete`: Delete entry | `Ctrl+L`: Lock vault | `Ctrl+F`: Find
+* Lock vault when idle
+
+### Backup and Transfer
+**Export:** File > Export Encrypted Vault → Save encrypted file  
+**Import:** Choose "Import Existing Vault" → Select file → Enter Master Password
 
 ---
 
-## Contributing
+## Security
 
-We welcome contributions! If you'd like to help improve pwick, please fork the repository and submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+* **Encryption:** AES-256-GCM authenticated encryption
+* **Key Derivation:** Argon2id (3 iterations, 64 MB memory, unique salt per vault)
+* **Master Password:** Never stored on disk
+* **Encrypted Clipboard:** Passwords encrypted before copying (prevents telemetry/snooping)
+* **No Network:** Zero external connections, complete local-first architecture
 
 ---
 
 ## License
 
-This project is licensed under the [**Your License, e.g., MIT**] License. See the `LICENSE` file for more details.
+MIT License. See `LICENSE` file for details.
