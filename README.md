@@ -111,6 +111,7 @@ When you first launch the application, you will be asked to create a new vault.
 * Use your Master Password to unlock your vault.
 * Add, edit, copy, or delete your password entries.
 * **Copy passwords securely**: Click "Copy Password" or press `Ctrl+C` - the password is automatically cleared from your clipboard after 30 seconds for security.
+* **Clipboard History**: View the last 30 copied passwords in the history panel. Double-click any item to copy it again. History automatically refreshes each new day.
 * **Use keyboard shortcuts** for quick access:
   - `Ctrl+C`: Copy password
   - `Ctrl+N`: Add new entry

@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Password visibility toggle in entry dialogs
   - Strong password generator (20 characters, mixed alphanumeric and symbols)
   - Copy password to clipboard functionality with auto-clear after 30 seconds
+  - Clipboard history panel showing last 30 copied passwords (refreshes daily)
+  - Double-click clipboard history items to copy again
   - Keyboard shortcuts for common actions (Copy: Ctrl+C, New: Ctrl+N, Edit: Ctrl+E, Delete: Del, Lock: Ctrl+L, Find: Ctrl+F)
   - Lock vault feature to secure application when idle
 - Vault import/export functionality:

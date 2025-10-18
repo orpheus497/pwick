@@ -7,7 +7,8 @@ import sys
 import os
 import secrets
 import string
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
+from datetime import datetime, date
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -411,6 +412,11 @@ class MainWindow(QMainWindow):
         self.clipboard_timer.timeout.connect(self._clear_clipboard)
         self.clipboard_timer.setSingleShot(True)
         
+        # Clipboard history (last 30 copies, cleared each day)
+        self.clipboard_history: List[Dict[str, str]] = []
+        self.clipboard_history_date: date = date.today()
+        self.max_clipboard_history = 30
+        
         self._setup_ui()
         self._setup_shortcuts()
         self._show_welcome()
@@ -478,6 +484,19 @@ class MainWindow(QMainWindow):
         
         details_group.setLayout(details_layout)
         right_panel.addWidget(details_group)
+        
+        # Clipboard History Panel
+        clipboard_label = QLabel("Clipboard History (Last 30)")
+        clipboard_label_font = QFont()
+        clipboard_label_font.setPointSize(12)
+        clipboard_label_font.setBold(True)
+        clipboard_label.setFont(clipboard_label_font)
+        right_panel.addWidget(clipboard_label)
+        
+        self.clipboard_history_list = QListWidget()
+        self.clipboard_history_list.setMaximumHeight(150)
+        self.clipboard_history_list.itemDoubleClicked.connect(self._on_clipboard_history_double_click)
+        right_panel.addWidget(self.clipboard_history_list)
         
         # Action buttons
         action_layout = QHBoxLayout()
@@ -550,6 +569,55 @@ class MainWindow(QMainWindow):
         """Clear the clipboard for security."""
         pyperclip.copy('')
         self.statusBar().showMessage("Clipboard cleared for security", 2000)
+    
+    def _add_to_clipboard_history(self, title: str, text: str):
+        """Add an entry to clipboard history."""
+        # Check if we need to clear history for a new day
+        today = date.today()
+        if today != self.clipboard_history_date:
+            self.clipboard_history.clear()
+            self.clipboard_history_date = today
+        
+        # Add new entry with timestamp
+        now = datetime.now()
+        entry = {
+            'title': title,
+            'text': text[:50] + '...' if len(text) > 50 else text,  # Truncate long texts
+            'timestamp': now.strftime('%H:%M:%S'),
+            'full_text': text
+        }
+        
+        # Add to beginning of list (most recent first)
+        self.clipboard_history.insert(0, entry)
+        
+        # Keep only last 30 entries
+        if len(self.clipboard_history) > self.max_clipboard_history:
+            self.clipboard_history = self.clipboard_history[:self.max_clipboard_history]
+        
+        # Update UI
+        self._refresh_clipboard_history()
+    
+    def _refresh_clipboard_history(self):
+        """Refresh the clipboard history list widget."""
+        self.clipboard_history_list.clear()
+        
+        for entry in self.clipboard_history:
+            display_text = f"[{entry['timestamp']}] {entry['title']}: {entry['text']}"
+            item = QListWidgetItem(display_text)
+            item.setData(Qt.UserRole, entry['full_text'])
+            self.clipboard_history_list.addItem(item)
+    
+    def _on_clipboard_history_double_click(self, item):
+        """Handle double-click on clipboard history item to copy it again."""
+        full_text = item.data(Qt.UserRole)
+        if full_text:
+            pyperclip.copy(full_text)
+            
+            # Restart the auto-clear timer
+            self.clipboard_timer.start(30000)
+            
+            # Show notification
+            self.statusBar().showMessage("Copied from history! (Will auto-clear in 30s)", 2000)
     
     def _show_welcome(self):
         """Show welcome dialog."""
@@ -734,7 +802,11 @@ class MainWindow(QMainWindow):
         
         entry = self._find_entry(self.current_entry_id)
         if entry:
-            pyperclip.copy(entry['password'])
+            password_text = entry['password']
+            pyperclip.copy(password_text)
+            
+            # Add to clipboard history
+            self._add_to_clipboard_history(entry['title'], password_text)
             
             # Start clipboard auto-clear timer (30 seconds)
             self.clipboard_timer.start(30000)  # 30 seconds in milliseconds
