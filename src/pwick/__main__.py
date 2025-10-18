@@ -4,5 +4,11 @@ pwick - Main entry point for the application.
 
 from .ui import run
 
-if __name__ == '__main__':
+
+def main():
+    """Main entry point for pwick application."""
     run()
+
+
+if __name__ == '__main__':
+    main()

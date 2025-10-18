@@ -1,10 +1,13 @@
 # pwick 🛡️
-_A simple, secure, and 100% local password manager._
+**Version 1.0.0** - _A simple, secure, and 100% local password manager._
 
 pwick is a cross-platform password manager built for users who demand absolute privacy. Your data **never** leaves your computer, is **never** sent to a server, and is **always** protected by strong, internal encryption.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue) ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Python](https://img.shields.io/badge/python-3.7%2B-blue)
 
 ---
 
@@ -20,11 +23,36 @@ In an age of constant cloud syncing and data breaches, pwick is intentionally di
 
 ## Features
 
-* 🔒 **100% Local-First:** Your vault is a single, encrypted file on your computer.
-* 🔑 **Strong Encryption:** Your entire vault is encrypted using **AES-256-GCM** (authenticated encryption) with a key derived from your Master Password using **Argon2id** key derivation function.
-* 💻 **Cross-Platform:** Works natively on both **Windows** and **Linux**.
-* 🔄 **Easy Backup & Transfer:** Securely export your *entire* encrypted vault to a single file. Move it to a new device via a USB drive (or any other method) and import it seamlessly.
-* ✨ **Simple Interface:** A clean, no-nonsense UI with dark theme focused on one thing: managing your passwords securely.
+### Core Security
+* 🔒 **100% Local-First:** Your vault is a single, encrypted file on your computer
+* 🔑 **Strong Encryption:** AES-256-GCM authenticated encryption prevents data tampering
+* 🛡️ **Argon2id Key Derivation:** Winner of the Password Hashing Competition, protects against brute-force attacks
+  - Time cost: 3 iterations
+  - Memory cost: 65536 KB (64 MB)
+  - Parallelism: 1 thread
+  - Unique 16-byte salt per vault
+* 🔐 **Master Password Security:** Never stored on disk, exists only in memory when vault is unlocked
+* 💾 **Encrypted Backups:** Export/import functionality for secure vault transfer between devices
+
+### User Interface
+* 💻 **Cross-Platform:** Works natively on Windows and Linux
+* 🎨 **Dark Theme:** Black, grey, white, and red color scheme for comfortable viewing
+* ⌨️ **Keyboard Shortcuts:** Ctrl+C (copy), Ctrl+N (new), Ctrl+E (edit), Delete, Ctrl+L (lock), Ctrl+F (find)
+* 📋 **Clipboard Management:**
+  - Auto-clear after 30 seconds for security
+  - History panel showing last 30 copies
+  - Daily refresh of clipboard history
+* 🔄 **Password Tools:**
+  - 20-character strong password generator
+  - Show/hide toggle for password visibility
+  - One-click copy to clipboard
+
+### Entry Management
+* ➕ **Create:** Add new password entries with title, username, password, and notes
+* ✏️ **Edit:** Update existing entries with full history tracking
+* 🗑️ **Delete:** Remove entries with confirmation dialog
+* 🔍 **Search:** Quick find with Ctrl+F to focus entry list
+* 🏷️ **Organization:** Each entry includes UUID, timestamps, and metadata
 
 ---
 
@@ -42,23 +70,49 @@ The application features a dark theme with a clean, distraction-free interface d
 
 ## Installation
 
-### From Releases
+### Quick Install (Recommended)
 
-This is the easiest way to get started.
+#### Windows
+1. Download the repository or release package
+2. Open Command Prompt in the pwick directory
+3. Run the installation script:
+   ```cmd
+   install.bat
+   ```
+4. Follow the on-screen instructions
+5. Run pwick from anywhere:
+   ```cmd
+   pwick
+   ```
 
-1.  Go to the [**Releases Page**](httpsa://github.com/YourUsername/pwick/releases).
-2.  Download the latest file for your operating system:
-    * **Windows:** `pwick-v1.0.exe` (or `.msi`)
-    * **Linux:** `pwick-v1.0.AppImage` (or `.deb`/`.rpm`)
-3.  (For Linux .AppImage) Make the file executable:
-    ```bash
-    chmod +x pwick-v1.0.AppImage
-    ```
-4.  Run the application.
+#### Linux / Mac
+1. Download the repository or release package
+2. Open terminal in the pwick directory
+3. Run the installation script:
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+4. Choose user or system-wide installation
+5. Run pwick from anywhere:
+   ```bash
+   pwick
+   ```
+
+### Manual Installation
+
+#### Using pip (All Platforms)
+```bash
+# Install from source directory
+pip install .
+
+# Or for development (editable install)
+pip install -e .
+```
 
 ### Build From Source
 
-If you prefer to build the project yourself:
+If you prefer to build the project yourself without installing:
 
 1.  Clone the repository:
     ```bash
@@ -87,11 +141,35 @@ If you prefer to build the project yourself:
 
 **Requirements:**
 - Python 3.7 or higher
-- Dependencies (installed automatically by build script):
-  - PyQt5 (GUI framework)
-  - cryptography (AES-256-GCM encryption)
-  - argon2-cffi (Argon2id key derivation)
-  - pyperclip (clipboard support)
+- Dependencies (installed automatically):
+  - PyQt5 5.15.10 (GUI framework)
+  - cryptography 41.0.7 (AES-256-GCM encryption)
+  - argon2-cffi 23.1.0 (Argon2id key derivation)
+  - pyperclip 1.8.2 (clipboard support)
+
+---
+
+## Uninstallation
+
+### Using Uninstall Script
+
+#### Windows
+```cmd
+uninstall.bat
+```
+
+#### Linux / Mac
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+### Manual Uninstallation
+```bash
+pip uninstall pwick
+```
+
+**Note:** Uninstalling pwick does NOT delete your vault files. They remain at their saved locations for safety.
 
 ---
 
