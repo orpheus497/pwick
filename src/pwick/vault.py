@@ -7,7 +7,7 @@ import json
 import os
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -86,7 +86,7 @@ def create_vault(path: str, master_password: str) -> Dict[str, Any]:
     vault = {
         'metadata': {
             'version': '1.0',
-            'created_at': datetime.utcnow().isoformat()
+            'created_at': datetime.now(timezone.utc).isoformat()
         },
         'entries': []
     }
@@ -155,7 +155,7 @@ def add_entry(vault: Dict[str, Any], title: str, username: str,
     Returns the entry ID.
     """
     entry_id = str(uuid.uuid4())
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     
     entry = {
         'id': entry_id,
@@ -188,7 +188,7 @@ def update_entry(vault: Dict[str, Any], entry_id: str, title: Optional[str] = No
                 entry['password'] = password
             if notes is not None:
                 entry['notes'] = notes
-            entry['updated_at'] = datetime.utcnow().isoformat()
+            entry['updated_at'] = datetime.now(timezone.utc).isoformat()
             return True
     return False
 
