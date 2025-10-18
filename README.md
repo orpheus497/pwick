@@ -28,6 +28,18 @@ In an age of constant cloud syncing and data breaches, pwick is intentionally di
 
 ---
 
+## Screenshots
+
+### Welcome Screen
+![Welcome Screen](docs/screenshots/welcome_screen.png)
+
+### Entry Management
+![Entry Dialog](docs/screenshots/entry_dialog.png)
+
+The application features a dark theme with a clean, distraction-free interface designed for security and ease of use.
+
+---
+
 ## Installation
 
 ### From Releases
