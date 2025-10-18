@@ -26,12 +26,23 @@ python tests/test_integration.py
 pwick includes convenient keyboard shortcuts for quick access to common actions:
 
 ### Main Window Shortcuts
-- `Ctrl+C` / `Cmd+C` - Copy password to clipboard (auto-clears after 30 seconds)
+- `Ctrl+C` / `Cmd+C` - Copy password to encrypted clipboard (auto-clears after 30 seconds)
 - `Ctrl+N` / `Cmd+N` - Add new entry
 - `Ctrl+E` / `Cmd+E` - Edit selected entry
 - `Delete` / `Del` - Delete selected entry
 - `Ctrl+L` / `Cmd+L` - Lock vault
 - `Ctrl+F` / `Cmd+F` - Focus on entry list (for quick search/navigation)
+
+### Window Management
+- `X` (Close button) - Minimize to system tray (not quit)
+- Double-click tray icon - Show/hide window
+
+### System Tray Menu
+Right-click the tray icon for:
+- **Show** - Restore window from tray
+- **Hide to Tray** - Minimize to tray
+- **Lock Vault** - Lock and return to welcome screen
+- **Quit** - Exit application completely
 
 ### Dialog Shortcuts
 - `Enter` - Confirm dialog/action

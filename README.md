@@ -38,14 +38,20 @@ In an age of constant cloud syncing and data breaches, pwick is intentionally di
 * 💻 **Cross-Platform:** Works natively on Windows and Linux
 * 🎨 **Dark Theme:** Black, grey, white, and red color scheme for comfortable viewing
 * ⌨️ **Keyboard Shortcuts:** Ctrl+C (copy), Ctrl+N (new), Ctrl+E (edit), Delete, Ctrl+L (lock), Ctrl+F (find)
+* 🖥️ **System Tray Integration:**
+  - Minimize to system tray and run in background
+  - Double-click tray icon to show/hide window
+  - Right-click for quick actions (show, lock, quit)
+  - Close button minimizes to tray instead of quitting
 * 📋 **Clipboard Management:**
+  - **Encrypted Clipboard:** Passwords encrypted before copying (prevents telemetry/snooping)
   - Auto-clear after 30 seconds for security
   - History panel showing last 30 copies
   - Daily refresh of clipboard history
 * 🔄 **Password Tools:**
   - 20-character strong password generator
   - Show/hide toggle for password visibility
-  - One-click copy to clipboard
+  - One-click copy to encrypted clipboard
 
 ### Entry Management
 * ➕ **Create:** Add new password entries with title, username, password, and notes

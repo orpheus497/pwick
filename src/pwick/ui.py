@@ -7,20 +7,83 @@ import sys
 import os
 import secrets
 import string
+import base64
 from typing import Optional, Dict, Any, List
 from datetime import datetime, date
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QLineEdit, QTextEdit, QListWidget, QListWidgetItem,
-    QDialog, QFileDialog, QMessageBox, QCheckBox, QGroupBox, QFormLayout
+    QDialog, QFileDialog, QMessageBox, QCheckBox, QGroupBox, QFormLayout,
+    QSystemTrayIcon, QMenu, QAction
 )
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QKeySequence
+from PyQt5.QtGui import QFont, QKeySequence, QIcon, QPixmap, QPainter, QColor
 
 import pyperclip
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from . import vault
+
+
+class EncryptedClipboard:
+    """
+    Encrypted clipboard manager to prevent telemetry and clipboard snooping.
+    Encrypts data before placing on system clipboard using AES-256-GCM.
+    """
+    
+    def __init__(self):
+        # Generate a session key for this application instance
+        self.session_key = AESGCM.generate_key(bit_length=256)
+        self.cipher = AESGCM(self.session_key)
+        self.prefix = "PWICK_ENC:"
+    
+    def copy_encrypted(self, plaintext: str) -> None:
+        """
+        Encrypt plaintext and copy to clipboard.
+        Format: PWICK_ENC:<base64(nonce||ciphertext||tag)>
+        """
+        if not plaintext:
+            return
+        
+        # Generate random nonce
+        nonce = secrets.token_bytes(12)
+        
+        # Encrypt the plaintext
+        ciphertext = self.cipher.encrypt(nonce, plaintext.encode('utf-8'), None)
+        
+        # Combine nonce + ciphertext and encode as base64
+        encrypted_blob = base64.b64encode(nonce + ciphertext).decode('ascii')
+        
+        # Copy to clipboard with prefix
+        pyperclip.copy(self.prefix + encrypted_blob)
+    
+    def paste_decrypted(self) -> Optional[str]:
+        """
+        Retrieve from clipboard and decrypt if it's our encrypted format.
+        Returns None if clipboard doesn't contain our encrypted data or decryption fails.
+        """
+        try:
+            clipboard_content = pyperclip.paste()
+            
+            if not clipboard_content.startswith(self.prefix):
+                # Not our encrypted data, could be from external source
+                return None
+            
+            # Remove prefix and decode base64
+            encrypted_blob = clipboard_content[len(self.prefix):]
+            encrypted_data = base64.b64decode(encrypted_blob)
+            
+            # Extract nonce and ciphertext
+            nonce = encrypted_data[:12]
+            ciphertext = encrypted_data[12:]
+            
+            # Decrypt
+            plaintext = self.cipher.decrypt(nonce, ciphertext, None)
+            return plaintext.decode('utf-8')
+        except Exception:
+            # Decryption failed or invalid format
+            return None
 
 
 # Dark theme stylesheet with black, grey, white, and red accents
@@ -407,6 +470,9 @@ class MainWindow(QMainWindow):
         self.master_password: Optional[str] = None
         self.current_entry_id: Optional[str] = None
         
+        # Encrypted clipboard manager
+        self.encrypted_clipboard = EncryptedClipboard()
+        
         # Clipboard auto-clear timer (30 seconds)
         self.clipboard_timer = QTimer()
         self.clipboard_timer.timeout.connect(self._clear_clipboard)
@@ -417,9 +483,113 @@ class MainWindow(QMainWindow):
         self.clipboard_history_date: date = date.today()
         self.max_clipboard_history = 30
         
+        # Setup system tray
+        self._setup_system_tray()
+        
         self._setup_ui()
         self._setup_shortcuts()
         self._show_welcome()
+    
+    def _setup_system_tray(self):
+        """Setup system tray icon and menu."""
+        # Create a simple icon (red square with 'P')
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(QColor(198, 40, 40))  # Red background
+        
+        painter = QPainter(pixmap)
+        painter.setPen(QColor(255, 255, 255))  # White text
+        painter.setFont(QFont('Arial', 40, QFont.Bold))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, 'P')
+        painter.end()
+        
+        icon = QIcon(pixmap)
+        
+        # Create system tray icon
+        self.tray_icon = QSystemTrayIcon(icon, self)
+        
+        # Create tray menu
+        tray_menu = QMenu()
+        
+        show_action = QAction("Show", self)
+        show_action.triggered.connect(self._show_from_tray)
+        tray_menu.addAction(show_action)
+        
+        hide_action = QAction("Hide to Tray", self)
+        hide_action.triggered.connect(self._hide_to_tray)
+        tray_menu.addAction(hide_action)
+        
+        tray_menu.addSeparator()
+        
+        lock_action = QAction("Lock Vault", self)
+        lock_action.triggered.connect(self._lock_vault)
+        tray_menu.addAction(lock_action)
+        
+        tray_menu.addSeparator()
+        
+        quit_action = QAction("Quit", self)
+        quit_action.triggered.connect(self._quit_application)
+        tray_menu.addAction(quit_action)
+        
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self._on_tray_activated)
+        
+        # Show the tray icon
+        self.tray_icon.show()
+        
+        # Show message on first run
+        self.tray_icon.showMessage(
+            "pwick Running",
+            "pwick is running in the background. Click the tray icon to show/hide.",
+            QSystemTrayIcon.Information,
+            2000
+        )
+    
+    def _on_tray_activated(self, reason):
+        """Handle tray icon activation."""
+        if reason == QSystemTrayIcon.DoubleClick:
+            if self.isVisible():
+                self._hide_to_tray()
+            else:
+                self._show_from_tray()
+    
+    def _show_from_tray(self):
+        """Show window from system tray."""
+        self.show()
+        self.raise_()
+        self.activateWindow()
+    
+    def _hide_to_tray(self):
+        """Hide window to system tray."""
+        self.hide()
+        self.tray_icon.showMessage(
+            "pwick Minimized",
+            "pwick is running in the background. Double-click the tray icon to restore.",
+            QSystemTrayIcon.Information,
+            2000
+        )
+    
+    def _quit_application(self):
+        """Quit the application completely."""
+        # Clear sensitive data
+        self.master_password = None
+        self.vault_data = None
+        
+        # Clear clipboard if it contains our encrypted data
+        self._clear_clipboard()
+        
+        # Hide tray icon
+        self.tray_icon.hide()
+        
+        # Quit
+        QApplication.quit()
+    
+    def closeEvent(self, event):
+        """Override close event to minimize to tray instead of quitting."""
+        if self.tray_icon.isVisible():
+            event.ignore()
+            self._hide_to_tray()
+        else:
+            event.accept()
     
     def _setup_ui(self):
         """Setup the main UI."""
@@ -608,16 +778,20 @@ class MainWindow(QMainWindow):
             self.clipboard_history_list.addItem(item)
     
     def _on_clipboard_history_double_click(self, item):
-        """Handle double-click on clipboard history item to copy it again."""
+        """Handle double-click on clipboard history item to copy it again (encrypted)."""
         full_text = item.data(Qt.UserRole)
         if full_text:
-            pyperclip.copy(full_text)
+            # Use encrypted clipboard to prevent telemetry
+            self.encrypted_clipboard.copy_encrypted(full_text)
             
             # Restart the auto-clear timer
             self.clipboard_timer.start(30000)
             
             # Show notification
-            self.statusBar().showMessage("Copied from history! (Will auto-clear in 30s)", 2000)
+            self.statusBar().showMessage(
+                "Copied from history (encrypted)! Will auto-clear in 30s", 
+                2000
+            )
     
     def _show_welcome(self):
         """Show welcome dialog."""
@@ -795,7 +969,7 @@ class MainWindow(QMainWindow):
             self.current_entry_id = None
     
     def _copy_password(self):
-        """Copy the selected entry's password to clipboard."""
+        """Copy the selected entry's password to clipboard (encrypted)."""
         if not self.current_entry_id:
             QMessageBox.warning(self, "Warning", "Please select an entry to copy password.")
             return
@@ -803,7 +977,9 @@ class MainWindow(QMainWindow):
         entry = self._find_entry(self.current_entry_id)
         if entry:
             password_text = entry['password']
-            pyperclip.copy(password_text)
+            
+            # Use encrypted clipboard to prevent telemetry
+            self.encrypted_clipboard.copy_encrypted(password_text)
             
             # Add to clipboard history
             self._add_to_clipboard_history(entry['title'], password_text)
@@ -812,7 +988,10 @@ class MainWindow(QMainWindow):
             self.clipboard_timer.start(30000)  # 30 seconds in milliseconds
             
             # Show temporary notification
-            self.statusBar().showMessage("Password copied to clipboard! (Will auto-clear in 30s)", 3000)
+            self.statusBar().showMessage(
+                "Password copied to clipboard (encrypted)! Will auto-clear in 30s", 
+                3000
+            )
     
     def _export_vault(self):
         """Export the vault to an encrypted file."""

@@ -25,11 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add/Edit entry dialogs with password generation
   - Password visibility toggle in entry dialogs
   - Strong password generator (20 characters, mixed alphanumeric and symbols)
+  - **System tray integration**: Minimize to tray, run in background, double-click to restore
+  - **Encrypted clipboard**: Passwords encrypted with AES-256-GCM before copying (prevents telemetry/snooping)
   - Copy password to clipboard functionality with auto-clear after 30 seconds
   - Clipboard history panel showing last 30 copied passwords (refreshes daily)
   - Double-click clipboard history items to copy again
   - Keyboard shortcuts for common actions (Copy: Ctrl+C, New: Ctrl+N, Edit: Ctrl+E, Delete: Del, Lock: Ctrl+L, Find: Ctrl+F)
   - Lock vault feature to secure application when idle
+  - Close button minimizes to tray instead of quitting application
 - Vault import/export functionality:
   - Export entire vault to encrypted backup file
   - Import vault from backup to new location
@@ -69,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authenticated encryption prevents tampering
 - No network connections or external API calls
 - Complete local-first architecture ensures data privacy
+- **Encrypted clipboard prevents telemetry and clipboard snooping**
+- **Session-unique encryption key for clipboard data**
 - Clipboard auto-clear after 30 seconds
 - Daily refresh of clipboard history for security
 
