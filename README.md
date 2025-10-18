@@ -21,10 +21,10 @@ In an age of constant cloud syncing and data breaches, pwick is intentionally di
 ## Features
 
 * 🔒 **100% Local-First:** Your vault is a single, encrypted file on your computer.
-* 🔑 **Strong Encryption:** Your entire vault is encrypted using [**Specify Algorithm, e.g., AES-256**] with a key derived from your Master Password.
+* 🔑 **Strong Encryption:** Your entire vault is encrypted using **AES-256-GCM** (authenticated encryption) with a key derived from your Master Password using **Argon2id** key derivation function.
 * 💻 **Cross-Platform:** Works natively on both **Windows** and **Linux**.
 * 🔄 **Easy Backup & Transfer:** Securely export your *entire* encrypted vault to a single file. Move it to a new device via a USB drive (or any other method) and import it seamlessly.
-* ✨ **Simple Interface:** A clean, no-nonsense UI focused on one thing: managing your passwords securely.
+* ✨ **Simple Interface:** A clean, no-nonsense UI with dark theme focused on one thing: managing your passwords securely.
 
 ---
 
@@ -50,11 +50,36 @@ If you prefer to build the project yourself:
 
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/YourUsername/pwick.git](https://github.com/YourUsername/pwick.git)
+    git clone https://github.com/orpheus497/pwick.git
     cd pwick
     ```
-2.  [**Add your build instructions here**]
-    *(e.g., `npm install`, `npm run build`, or `make`, etc.)*
+
+2.  Run the build script (Linux/Mac):
+    ```bash
+    chmod +x build.sh
+    ./build.sh
+    ```
+    
+    Or manually (Windows/Linux/Mac):
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    pip install -r requirements.txt
+    ```
+
+3.  Run the application:
+    ```bash
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    python -m src.pwick
+    ```
+
+**Requirements:**
+- Python 3.7 or higher
+- Dependencies (installed automatically by build script):
+  - PyQt5 (GUI framework)
+  - cryptography (AES-256-GCM encryption)
+  - argon2-cffi (Argon2id key derivation)
+  - pyperclip (clipboard support)
 
 ---
 
@@ -104,8 +129,14 @@ Your vault will be decrypted and loaded locally on the new machine.
 
 ## Security Model
 
-* **Encryption at Rest:** Your local vault file is fully encrypted using [**Specify Algorithm, e.g., AES-256-GCM**].
-* **Key Derivation:** Your Master Password is run through a strong key derivation function ([**Specify KDF, e.g., Argon2id or PBKDF2**]) to create the encryption key. This makes brute-force attacks much more difficult.
+* **Encryption at Rest:** Your local vault file is fully encrypted using **AES-256-GCM** (Advanced Encryption Standard with Galois/Counter Mode), which provides both confidentiality and authenticity.
+* **Key Derivation:** Your Master Password is run through **Argon2id** (winner of the Password Hashing Competition) to create the encryption key. This uses:
+  - Time cost: 3 iterations
+  - Memory cost: 65536 KB (64 MB)
+  - Parallelism: 1 thread
+  - Salt: 16 random bytes (unique per vault)
+  
+  These settings make brute-force attacks computationally expensive and memory-intensive.
 * **No Plaintext:** Your Master Password is never stored on disk, not even in a hashed form. It is only held in memory when the vault is unlocked.
 
 ---
@@ -124,4 +155,4 @@ We welcome contributions! If you'd like to help improve pwick, please fork the r
 
 ## License
 
-This project is licensed under the [**Your License, e.g., MIT**] License. See the `LICENSE` file for more details.
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
