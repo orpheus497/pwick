@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add/Edit entry dialogs with password generation
   - Password visibility toggle in entry dialogs
   - Strong password generator (20 characters, mixed alphanumeric and symbols)
-  - Copy password to clipboard functionality
+  - Copy password to clipboard functionality with auto-clear after 30 seconds
+  - Keyboard shortcuts for common actions (Copy: Ctrl+C, New: Ctrl+N, Edit: Ctrl+E, Delete: Del, Lock: Ctrl+L, Find: Ctrl+F)
   - Lock vault feature to secure application when idle
 - Vault import/export functionality:
   - Export entire vault to encrypted backup file

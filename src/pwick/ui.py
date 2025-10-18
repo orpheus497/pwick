@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import (
     QDialog, QFileDialog, QMessageBox, QCheckBox, QGroupBox, QFormLayout
 )
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QKeySequence
 
 import pyperclip
 
@@ -406,7 +406,13 @@ class MainWindow(QMainWindow):
         self.master_password: Optional[str] = None
         self.current_entry_id: Optional[str] = None
         
+        # Clipboard auto-clear timer (30 seconds)
+        self.clipboard_timer = QTimer()
+        self.clipboard_timer.timeout.connect(self._clear_clipboard)
+        self.clipboard_timer.setSingleShot(True)
+        
         self._setup_ui()
+        self._setup_shortcuts()
         self._show_welcome()
     
     def _setup_ui(self):
@@ -511,6 +517,39 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(right_panel, 3)
         
         central.setLayout(main_layout)
+    
+    def _setup_shortcuts(self):
+        """Setup keyboard shortcuts."""
+        from PyQt5.QtWidgets import QShortcut
+        
+        # Ctrl+C / Cmd+C - Copy password
+        copy_shortcut = QShortcut(QKeySequence.Copy, self)
+        copy_shortcut.activated.connect(self._copy_password)
+        
+        # Ctrl+N / Cmd+N - Add new entry
+        new_shortcut = QShortcut(QKeySequence.New, self)
+        new_shortcut.activated.connect(self._add_entry)
+        
+        # Ctrl+E / Cmd+E - Edit entry
+        edit_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
+        edit_shortcut.activated.connect(self._edit_entry)
+        
+        # Delete - Delete entry
+        delete_shortcut = QShortcut(QKeySequence.Delete, self)
+        delete_shortcut.activated.connect(self._delete_entry)
+        
+        # Ctrl+L / Cmd+L - Lock vault
+        lock_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
+        lock_shortcut.activated.connect(self._lock_vault)
+        
+        # Ctrl+F / Cmd+F - Focus search (if entry list is a search target)
+        focus_shortcut = QShortcut(QKeySequence.Find, self)
+        focus_shortcut.activated.connect(lambda: self.entry_list.setFocus())
+    
+    def _clear_clipboard(self):
+        """Clear the clipboard for security."""
+        pyperclip.copy('')
+        self.statusBar().showMessage("Clipboard cleared for security", 2000)
     
     def _show_welcome(self):
         """Show welcome dialog."""
@@ -697,8 +736,11 @@ class MainWindow(QMainWindow):
         if entry:
             pyperclip.copy(entry['password'])
             
+            # Start clipboard auto-clear timer (30 seconds)
+            self.clipboard_timer.start(30000)  # 30 seconds in milliseconds
+            
             # Show temporary notification
-            self.statusBar().showMessage("Password copied to clipboard!", 3000)
+            self.statusBar().showMessage("Password copied to clipboard! (Will auto-clear in 30s)", 3000)
     
     def _export_vault(self):
         """Export the vault to an encrypted file."""

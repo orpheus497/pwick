@@ -23,11 +23,20 @@ python tests/test_integration.py
 
 ## Keyboard Shortcuts
 
-Currently, pwick uses standard Qt shortcuts:
+pwick includes convenient keyboard shortcuts for quick access to common actions:
+
+### Main Window Shortcuts
+- `Ctrl+C` / `Cmd+C` - Copy password to clipboard (auto-clears after 30 seconds)
+- `Ctrl+N` / `Cmd+N` - Add new entry
+- `Ctrl+E` / `Cmd+E` - Edit selected entry
+- `Delete` / `Del` - Delete selected entry
+- `Ctrl+L` / `Cmd+L` - Lock vault
+- `Ctrl+F` / `Cmd+F` - Focus on entry list (for quick search/navigation)
+
+### Dialog Shortcuts
 - `Enter` - Confirm dialog/action
 - `Esc` - Cancel dialog
 - `Tab` - Navigate between fields
-- `Ctrl+C` / `Cmd+C` - Copy (when text is selected)
 
 ## File Formats
 
