@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pwick"
-version = "1.0.0"
+version = "1.0.1"
 description = "A simple, secure, and 100% local password manager"
 readme = "README.md"
 requires-python = ">=3.7"
-license = {text = "MIT"}
+license = { text = "MIT" }
 authors = [
     {name = "orpheus497"}
 ]
@@ -20,29 +20,28 @@ classifiers = [
     "Topic :: Utilities",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
 ]
 dependencies = [
     "PyQt5==5.15.10",
-    "cryptography==41.0.7",
+    "cryptography>=41.0.7",
     "argon2-cffi==23.1.0",
     "pyperclip==1.8.2",
 ]
 
 [project.urls]
-Homepage = "https://github.com/orpheus497/pwick"
+"Homepage" = "https://github.com/orpheus497/pwick"
 "Bug Reports" = "https://github.com/orpheus497/pwick/issues"
 "Source" = "https://github.com/orpheus497/pwick"
 
 [project.scripts]
 pwick = "pwick.__main__:main"
+
+[project.gui-scripts]
 pwick-gui = "pwick.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]

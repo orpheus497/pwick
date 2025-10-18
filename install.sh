@@ -59,7 +59,7 @@ case $choice in
     2)
         echo ""
         echo "Installing pwick system-wide..."
-        sudo python3 -m pip install --upgrade .
+        sudo python3 -m pip install --upgrade --break-system-packages .
         
         echo ""
         echo "✓ Installation complete!"
