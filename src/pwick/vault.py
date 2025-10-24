@@ -148,8 +148,8 @@ def load_vault(path: str, master_password: str) -> Dict[str, Any]:
     return vault
 
 
-def add_entry(vault: Dict[str, Any], title: str, username: str, 
-              password: str, notes: str = "") -> str:
+def add_entry(vault: Dict[str, Any], title: str, username: str = "", 
+              password: str = "", notes: str = "", entry_type: str = "password") -> str:
     """
     Add a new entry to the vault.
     Returns the entry ID.
@@ -159,6 +159,7 @@ def add_entry(vault: Dict[str, Any], title: str, username: str,
     
     entry = {
         'id': entry_id,
+        'type': entry_type,
         'title': title,
         'username': username,
         'password': password,
@@ -173,7 +174,7 @@ def add_entry(vault: Dict[str, Any], title: str, username: str,
 
 def update_entry(vault: Dict[str, Any], entry_id: str, title: Optional[str] = None,
                 username: Optional[str] = None, password: Optional[str] = None,
-                notes: Optional[str] = None) -> bool:
+                notes: Optional[str] = None, entry_type: Optional[str] = None) -> bool:
     """
     Update an existing entry.
     Returns True if entry was found and updated, False otherwise.
@@ -188,9 +189,26 @@ def update_entry(vault: Dict[str, Any], entry_id: str, title: Optional[str] = No
                 entry['password'] = password
             if notes is not None:
                 entry['notes'] = notes
+            if entry_type is not None:
+                entry['type'] = entry_type
             entry['updated_at'] = datetime.now(timezone.utc).isoformat()
             return True
     return False
+
+def add_note(vault: Dict[str, Any], title: str, content: str) -> str:
+    """
+    Add a new note entry to the vault.
+    Returns the entry ID.
+    """
+    return add_entry(vault, title, notes=content, entry_type="note")
+
+def update_note(vault: Dict[str, Any], entry_id: str, title: Optional[str] = None,
+                content: Optional[str] = None) -> bool:
+    """
+    Update an existing note entry.
+    Returns True if entry was found and updated, False otherwise.
+    """
+    return update_entry(vault, entry_id, title=title, notes=content, entry_type="note")
 
 
 def delete_entry(vault: Dict[str, Any], entry_id: str) -> bool:

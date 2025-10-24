@@ -1,11 +1,11 @@
 #!/bin/bash
 # Installation script for pwick on Linux/Mac
-# This script installs pwick system-wide or in user space
+# This script sets up a local environment for pwick
 
 set -e
 
 echo "======================================"
-echo "  pwick v1.0.0 Installation Script"
+echo "  pwick v1.0.0 Local Setup Script"
 echo "======================================"
 echo ""
 
@@ -26,59 +26,48 @@ if ! python3 -m pip --version &> /dev/null; then
     exit 1
 fi
 
-echo ""
-echo "Choose installation type:"
-echo "1) User installation (recommended, no sudo required)"
-echo "2) System-wide installation (requires sudo)"
-echo ""
-read -p "Enter choice [1-2]: " choice
+# Create virtual environment
+VENV_DIR="venv"
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating Python virtual environment in './$VENV_DIR'..."
+    python3 -m venv "$VENV_DIR"
+else
+    echo "Virtual environment already exists."
+fi
 
-case $choice in
-    1)
-        echo ""
-        echo "Installing pwick for current user..."
-        python3 -m pip install --user --upgrade .
-        
-        # Add user bin to PATH if not already there
-        USER_BIN="$HOME/.local/bin"
-        if [[ ":$PATH:" != *":$USER_BIN:"* ]]; then
-            echo ""
-            echo "Note: $USER_BIN is not in your PATH."
-            echo "Add this line to your ~/.bashrc or ~/.profile:"
-            echo "  export PATH=\"\$HOME/.local/bin:\$PATH\""
-            echo ""
-        fi
-        
-        echo ""
-        echo "✓ Installation complete!"
-        echo ""
-        echo "To run pwick, execute:"
-        echo "  pwick"
-        echo ""
-        ;;
-    2)
-        echo ""
-        echo "Installing pwick system-wide..."
-        sudo python3 -m pip install --upgrade --break-system-packages .
-        
-        echo ""
-        echo "✓ Installation complete!"
-        echo ""
-        echo "To run pwick, execute:"
-        echo "  pwick"
-        echo ""
-        ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
-esac
+# Activate and install dependencies
+echo "Installing dependencies..."
+source "$VENV_DIR/bin/activate"
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install .
+deactivate
 
-echo "For more information, see:"
-echo "  README.md - Usage guide"
-echo "  QUICKREF.md - Quick reference"
-echo "  SECURITY.md - Security information"
+# Create launcher script
+LAUNCHER_SCRIPT="run_pwick.sh"
+echo "Creating launcher script './$LAUNCHER_SCRIPT'..."
+cat > "$LAUNCHER_SCRIPT" << EOL
+#!/bin/bash
+# Launcher for pwick
+# Activates the virtual environment and runs the application
+
+# Get the directory where the script is located
+DIR="\$( cd "\$( dirname "\${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Activate virtual environment and run pwick
+source "\$DIR/venv/bin/activate"
+python -m pwick
+deactivate
+EOL
+
+chmod +x "$LAUNCHER_SCRIPT"
+
 echo ""
-echo "To uninstall, run:"
-echo "  pip3 uninstall pwick"
+echo "✓ Setup complete!"
+echo ""
+echo "To run pwick, execute:"
+echo "  ./$LAUNCHER_SCRIPT"
+echo ""
+echo "To remove the local environment, run:"
+echo "  ./uninstall.sh"
 echo ""

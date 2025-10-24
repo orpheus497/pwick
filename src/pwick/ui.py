@@ -15,13 +15,14 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QLineEdit, QTextEdit, QListWidget, QListWidgetItem,
     QDialog, QFileDialog, QMessageBox, QCheckBox, QGroupBox, QFormLayout,
-    QSystemTrayIcon, QMenu, QAction
+    QSystemTrayIcon, QMenu, QAction, QTabWidget, QInputDialog
 )
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont, QKeySequence, QIcon, QPixmap, QPainter, QColor
 
 import pyperclip
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import csv
 
 from . import vault
 
@@ -469,6 +470,7 @@ class MainWindow(QMainWindow):
         self.vault_data: Optional[Dict[str, Any]] = None
         self.master_password: Optional[str] = None
         self.current_entry_id: Optional[str] = None
+        self.current_note_id: Optional[str] = None
         
         # Encrypted clipboard manager
         self.encrypted_clipboard = EncryptedClipboard()
@@ -593,16 +595,23 @@ class MainWindow(QMainWindow):
     
     def _setup_ui(self):
         """Setup the main UI."""
-        central = QWidget()
-        self.setCentralWidget(central)
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
         
-        main_layout = QHBoxLayout()
+        main_layout = QVBoxLayout(central_widget)
+        
+        self.tabs = QTabWidget()
+        main_layout.addWidget(self.tabs)
+        
+        # --- Passwords Tab ---
+        passwords_tab = QWidget()
+        passwords_layout = QHBoxLayout(passwords_tab)
         
         # Left panel - Entry list
         left_panel = QVBoxLayout()
         
         left_header = QHBoxLayout()
-        list_label = QLabel("Entries")
+        list_label = QLabel("Passwords")
         list_label_font = QFont()
         list_label_font.setPointSize(14)
         list_label_font.setBold(True)
@@ -610,23 +619,28 @@ class MainWindow(QMainWindow):
         left_header.addWidget(list_label)
         left_header.addStretch()
         
-        add_btn = QPushButton("Add")
+        add_btn = QPushButton("Add Password")
         add_btn.setObjectName("primaryButton")
-        add_btn.clicked.connect(self._add_entry)
+        add_btn.clicked.connect(self._add_password_entry)
         left_header.addWidget(add_btn)
+        
+        # Add CSV Import button
+        import_csv_btn = QPushButton("Import CSV")
+        import_csv_btn.clicked.connect(self._import_csv)
+        left_header.addWidget(import_csv_btn)
         
         left_panel.addLayout(left_header)
         
         self.entry_list = QListWidget()
-        self.entry_list.currentItemChanged.connect(self._on_entry_selected)
+        self.entry_list.currentItemChanged.connect(self._on_password_entry_selected)
         left_panel.addWidget(self.entry_list)
         
-        main_layout.addLayout(left_panel, 2)
+        passwords_layout.addLayout(left_panel, 2)
         
         # Right panel - Entry details
         right_panel = QVBoxLayout()
         
-        details_label = QLabel("Details")
+        details_label = QLabel("Password Details")
         details_label_font = QFont()
         details_label_font.setPointSize(14)
         details_label_font.setBold(True)
@@ -672,11 +686,11 @@ class MainWindow(QMainWindow):
         action_layout = QHBoxLayout()
         
         edit_btn = QPushButton("Edit")
-        edit_btn.clicked.connect(self._edit_entry)
+        edit_btn.clicked.connect(self._edit_password_entry)
         action_layout.addWidget(edit_btn)
         
         delete_btn = QPushButton("Delete")
-        delete_btn.clicked.connect(self._delete_entry)
+        delete_btn.clicked.connect(self._delete_password_entry)
         action_layout.addWidget(delete_btn)
         
         copy_btn = QPushButton("Copy Password")
@@ -703,9 +717,79 @@ class MainWindow(QMainWindow):
         
         right_panel.addLayout(bottom_layout)
         
-        main_layout.addLayout(right_panel, 3)
+        passwords_layout.addLayout(right_panel, 3)
         
-        central.setLayout(main_layout)
+        self.tabs.addTab(passwords_tab, "Passwords")
+        
+        # --- Notes Tab ---
+        notes_tab = QWidget()
+        notes_layout = QHBoxLayout(notes_tab)
+        
+        # Left panel - Note list
+        notes_left_panel = QVBoxLayout()
+        
+        notes_left_header = QHBoxLayout()
+        notes_list_label = QLabel("Notes")
+        notes_list_label_font = QFont()
+        notes_list_label_font.setPointSize(14)
+        notes_list_label_font.setBold(True)
+        notes_list_label.setFont(notes_list_label_font)
+        notes_left_header.addWidget(notes_list_label)
+        notes_left_header.addStretch()
+        
+        add_note_btn = QPushButton("Add Note")
+        add_note_btn.setObjectName("primaryButton")
+        add_note_btn.clicked.connect(self._add_note_entry)
+        notes_left_header.addWidget(add_note_btn)
+        
+        notes_left_panel.addLayout(notes_left_header)
+        
+        self.note_list = QListWidget()
+        self.note_list.currentItemChanged.connect(self._on_note_selected)
+        notes_left_panel.addWidget(self.note_list)
+        
+        notes_layout.addLayout(notes_left_panel, 2)
+        
+        # Right panel - Note details
+        notes_right_panel = QVBoxLayout()
+        
+        notes_details_label = QLabel("Note Details")
+        notes_details_label_font = QFont()
+        notes_details_label_font.setPointSize(14)
+        notes_details_label_font.setBold(True)
+        notes_details_label.setFont(notes_details_label_font)
+        notes_right_panel.addWidget(notes_details_label)
+        
+        notes_details_group = QGroupBox()
+        notes_details_layout = QFormLayout()
+        
+        self.note_detail_title = QLineEdit()
+        notes_details_layout.addRow("Title:", self.note_detail_title)
+        
+        self.note_detail_content = QTextEdit()
+        notes_details_layout.addRow("Content:", self.note_detail_content)
+        
+        notes_details_group.setLayout(notes_details_layout)
+        notes_right_panel.addWidget(notes_details_group)
+        
+        # Note action buttons
+        note_action_layout = QHBoxLayout()
+        
+        save_note_btn = QPushButton("Save Note")
+        save_note_btn.setObjectName("primaryButton")
+        save_note_btn.clicked.connect(self._save_note_entry)
+        note_action_layout.addWidget(save_note_btn)
+        
+        delete_note_btn = QPushButton("Delete Note")
+        delete_note_btn.clicked.connect(self._delete_note_entry)
+        note_action_layout.addWidget(delete_note_btn)
+        
+        notes_right_panel.addLayout(note_action_layout)
+        notes_right_panel.addStretch()
+        
+        notes_layout.addLayout(notes_right_panel, 3)
+        
+        self.tabs.addTab(notes_tab, "Notes")
     
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts."""
@@ -715,17 +799,29 @@ class MainWindow(QMainWindow):
         copy_shortcut = QShortcut(QKeySequence.Copy, self)
         copy_shortcut.activated.connect(self._copy_password)
         
-        # Ctrl+N / Cmd+N - Add new entry
-        new_shortcut = QShortcut(QKeySequence.New, self)
-        new_shortcut.activated.connect(self._add_entry)
+        # Ctrl+N / Cmd+N - Add new password entry
+        new_password_shortcut = QShortcut(QKeySequence.New, self)
+        new_password_shortcut.activated.connect(self._add_password_entry)
         
-        # Ctrl+E / Cmd+E - Edit entry
-        edit_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
-        edit_shortcut.activated.connect(self._edit_entry)
+        # Ctrl+Shift+N - Add new note entry
+        new_note_shortcut = QShortcut(QKeySequence("Ctrl+Shift+N"), self)
+        new_note_shortcut.activated.connect(self._add_note_entry)
         
-        # Delete - Delete entry
-        delete_shortcut = QShortcut(QKeySequence.Delete, self)
-        delete_shortcut.activated.connect(self._delete_entry)
+        # Ctrl+E / Cmd+E - Edit password entry
+        edit_password_shortcut = QShortcut(QKeySequence("Ctrl+E"), self)
+        edit_password_shortcut.activated.connect(self._edit_password_entry)
+        
+        # Ctrl+Shift+E - Save note entry
+        save_note_shortcut = QShortcut(QKeySequence("Ctrl+Shift+E"), self)
+        save_note_shortcut.activated.connect(self._save_note_entry)
+        
+        # Delete - Delete password entry
+        delete_password_shortcut = QShortcut(QKeySequence.Delete, self)
+        delete_password_shortcut.activated.connect(self._delete_password_entry)
+        
+        # Ctrl+Shift+Delete - Delete note entry
+        delete_note_shortcut = QShortcut(QKeySequence("Ctrl+Shift+Delete"), self)
+        delete_note_shortcut.activated.connect(self._delete_note_entry)
         
         # Ctrl+L / Cmd+L - Lock vault
         lock_shortcut = QShortcut(QKeySequence("Ctrl+L"), self)
@@ -873,20 +969,83 @@ class MainWindow(QMainWindow):
             self._show_welcome()
     
     def _refresh_entry_list(self):
-        """Refresh the entry list."""
+        """Refresh the entry list for passwords and notes."""
         self.entry_list.clear()
+        self.note_list.clear()
         if self.vault_data:
             for entry in self.vault_data['entries']:
-                item = QListWidgetItem(entry['title'])
-                item.setData(Qt.UserRole, entry['id'])
-                self.entry_list.addItem(item)
-    
-    def _on_entry_selected(self, current, previous):
-        """Handle entry selection."""
+                if entry.get('type', 'password') == 'password':
+                    item = QListWidgetItem(entry['title'])
+                    item.setData(Qt.UserRole, entry['id'])
+                    self.entry_list.addItem(item)
+                elif entry.get('type', 'password') == 'note':
+                    item = QListWidgetItem(entry['title'])
+                    item.setData(Qt.UserRole, entry['id'])
+                    self.note_list.addItem(item)
+
+    def _import_csv(self):
+        """Import entries from a CSV file."""
+        if not self.vault_data:
+            QMessageBox.warning(self, "Warning", "Please open or create a vault first.")
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Import CSV File", "", "CSV Files (*.csv);;All Files (*)"
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                imported_count = 0
+                for row in reader:
+                    title = row.get('title', '').strip()
+                    if not title:
+                        title = row.get('name', '').strip()
+
+                    username = row.get('username', '').strip()
+                    password = row.get('password', '').strip()
+                    notes = row.get('notes', '').strip()
+                    if not notes:
+                        notes = row.get('note', '').strip()
+
+                    # Collect all other unmapped fields and append to notes
+                    additional_notes = []
+                    for key, value in row.items():
+                        if key not in ['title', 'name', 'username', 'password', 'notes', 'note'] and value.strip():
+                            additional_notes.append(f"{key}: {value.strip()}")
+                    
+                    if additional_notes:
+                        if notes:
+                            notes += "\n\n" + "\n".join(additional_notes)
+                        else:
+                            notes = "\n".join(additional_notes)
+
+                    if not title:
+                        QMessageBox.warning(self, "Warning", f"Skipping row due to missing title: {row}")
+                        continue
+
+                    vault.add_entry(
+                        self.vault_data,
+                        title,
+                        username,
+                        password,
+                        notes
+                    )
+                    imported_count += 1
+                self._save_vault()
+                self._refresh_entry_list()
+                QMessageBox.information(self, "Success", f"Successfully imported {imported_count} entries from CSV.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to import CSV: {e}")
+
+    def _on_password_entry_selected(self, current, previous):
+        """Handle password entry selection."""
         if current:
             entry_id = current.data(Qt.UserRole)
             self.current_entry_id = entry_id
-            entry = self._find_entry(entry_id)
+            entry = self._find_entry(entry_id, entry_type='password')
             if entry:
                 self.detail_title.setText(entry['title'])
                 self.detail_username.setText(entry['username'] or "-")
@@ -898,17 +1057,41 @@ class MainWindow(QMainWindow):
             self.detail_username.setText("-")
             self.detail_password.setText("••••••••")
             self.detail_notes.setText("-")
-    
-    def _find_entry(self, entry_id: str) -> Optional[Dict[str, Any]]:
-        """Find an entry by ID."""
+
+    def _on_note_selected(self, current, previous):
+        """Handle note selection."""
+        if current:
+            note_id = current.data(Qt.UserRole)
+            self.current_note_id = note_id
+            note = self._find_entry(note_id, entry_type='note')
+            if note:
+                self.note_detail_title.setText(note['title'])
+                self.note_detail_content.setText(note['notes'])
+        else:
+            self.current_note_id = None
+            self.note_detail_title.clear()
+            self.note_detail_content.clear()
+
+    def _find_entry(self, entry_id: str, entry_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Find an entry by ID and optional type."""
         if self.vault_data:
             for entry in self.vault_data['entries']:
                 if entry['id'] == entry_id:
-                    return entry
+                    if entry_type is None or entry.get('type', 'password') == entry_type:
+                        return entry
         return None
     
-    def _add_entry(self):
-        """Add a new entry."""
+    def _find_entry(self, entry_id: str, entry_type: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Find an entry by ID and optional type."""
+        if self.vault_data:
+            for entry in self.vault_data['entries']:
+                if entry['id'] == entry_id:
+                    if entry_type is None or entry.get('type', 'password') == entry_type:
+                        return entry
+        return None
+    
+    def _add_password_entry(self):
+        """Add a new password entry."""
         dialog = EntryDialog(parent=self)
         if dialog.exec_() == QDialog.Accepted:
             data = dialog.result_data
@@ -917,18 +1100,19 @@ class MainWindow(QMainWindow):
                 data['title'],
                 data['username'],
                 data['password'],
-                data['notes']
+                data['notes'],
+                entry_type='password'
             )
             self._save_vault()
             self._refresh_entry_list()
-    
-    def _edit_entry(self):
-        """Edit the selected entry."""
+
+    def _edit_password_entry(self):
+        """Edit the selected password entry."""
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select an entry to edit.")
+            QMessageBox.warning(self, "Warning", "Please select a password entry to edit.")
             return
         
-        entry = self._find_entry(self.current_entry_id)
+        entry = self._find_entry(self.current_entry_id, entry_type='password')
         if entry:
             dialog = EntryDialog(entry_data=entry, parent=self)
             if dialog.exec_() == QDialog.Accepted:
@@ -939,7 +1123,8 @@ class MainWindow(QMainWindow):
                     data['title'],
                     data['username'],
                     data['password'],
-                    data['notes']
+                    data['notes'],
+                    entry_type='password'
                 )
                 self._save_vault()
                 self._refresh_entry_list()
@@ -949,16 +1134,16 @@ class MainWindow(QMainWindow):
                     if item.data(Qt.UserRole) == self.current_entry_id:
                         self.entry_list.setCurrentItem(item)
                         break
-    
-    def _delete_entry(self):
-        """Delete the selected entry."""
+
+    def _delete_password_entry(self):
+        """Delete the selected password entry."""
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select an entry to delete.")
+            QMessageBox.warning(self, "Warning", "Please select a password entry to delete.")
             return
         
         reply = QMessageBox.question(
             self, "Confirm Delete",
-            "Are you sure you want to delete this entry?",
+            "Are you sure you want to delete this password entry?",
             QMessageBox.Yes | QMessageBox.No
         )
         
@@ -967,6 +1152,60 @@ class MainWindow(QMainWindow):
             self._save_vault()
             self._refresh_entry_list()
             self.current_entry_id = None
+
+    def _add_note_entry(self):
+        """Add a new note entry."""
+        if not self.vault_data:
+            QMessageBox.warning(self, "Warning", "Please open or create a vault first.")
+            return
+
+        title, ok = QInputDialog.getText(self, "Add Note", "Note Title:")
+        if ok and title:
+            note_id = vault.add_note(self.vault_data, title.strip(), "")
+            self._save_vault()
+            self._refresh_entry_list()
+            # Select the newly added note
+            for i in range(self.note_list.count()):
+                item = self.note_list.item(i)
+                if item.data(Qt.UserRole) == note_id:
+                    self.note_list.setCurrentItem(item)
+                    break
+
+    def _save_note_entry(self):
+        """Save (add or update) the current note entry."""
+        if not self.current_note_id:
+            QMessageBox.warning(self, "Warning", "Please select a note or add a new one.")
+            return
+
+        title = self.note_detail_title.text().strip()
+        content = self.note_detail_content.toPlainText().strip()
+
+        if not title:
+            QMessageBox.warning(self, "Error", "Note title cannot be empty.")
+            return
+
+        vault.update_note(self.vault_data, self.current_note_id, title, content)
+        self._save_vault()
+        self._refresh_entry_list()
+        QMessageBox.information(self, "Success", "Note saved successfully!")
+
+    def _delete_note_entry(self):
+        """Delete the selected note entry."""
+        if not self.current_note_id:
+            QMessageBox.warning(self, "Warning", "Please select a note to delete.")
+            return
+
+        reply = QMessageBox.question(
+            self, "Confirm Delete",
+            "Are you sure you want to delete this note entry?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            vault.delete_entry(self.vault_data, self.current_note_id)
+            self._save_vault()
+            self._refresh_entry_list()
+            self.current_note_id = None
     
     def _copy_password(self):
         """Copy the selected entry's password to clipboard (encrypted)."""

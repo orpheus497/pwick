@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1]
+
+### Changed
+- Modified installation scripts (install.sh, install.bat) to set up a local virtual environment instead of system-wide installation.
+- Updated uninstallation scripts (uninstall.sh, uninstall.bat) to remove the local virtual environment.
+- Refactored main UI to use a tabbed interface, separating "Passwords" and "Notes" sections.
+- Renamed password-related UI methods and buttons for clarity (e.g., `_add_entry` to `_add_password_entry`).
+- Modified vault entry structure to include an `entry_type` field (e.g., 'password', 'note').
+- Updated `_refresh_entry_list` and `_find_entry` to handle different entry types.
+- Adjusted keyboard shortcuts to include new note management actions and reflect renamed password actions.
+- Improved CSV import to capture all fields and append unmapped data to notes.
+
+### Added
+- CSV import functionality for password entries.
+- Dedicated "Notes" tab with features to add, edit, save, and delete notes.
+- New methods for note management: `_add_note_entry`, `_on_note_selected`, `_save_note_entry`, `_delete_note_entry`.
+
 ## [1.0.0] - 2025-10-18
 
 ### Added

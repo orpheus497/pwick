@@ -1,9 +1,8 @@
 @echo off
-REM Installation script for pwick on Windows
-REM This script installs pwick using pip
+REM Local setup script for pwick on Windows
 
 echo ======================================
-echo   pwick v1.0.0 Installation Script
+echo   pwick v1.0.0 Local Setup Script
 echo ======================================
 echo.
 
@@ -21,44 +20,46 @@ echo Found Python:
 python --version
 echo.
 
-REM Check for pip
-python -m pip --version >nul 2>&1
-if errorlevel 1 (
-    echo Error: pip is required but not found.
-    echo Please ensure pip is installed with Python.
-    pause
-    exit /b 1
+REM Create virtual environment
+set VENV_DIR=venv
+if not exist "%VENV_DIR%" (
+    echo Creating Python virtual environment in '.\%VENV_DIR%'...
+    python -m venv "%VENV_DIR%"
+) else (
+    echo Virtual environment already exists.
 )
 
-echo.
-echo Installing pwick...
-echo.
+REM Activate and install dependencies
+echo Installing dependencies...
+call "%VENV_DIR%\Scripts\activate.bat"
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install .
+deactivate
 
-python -m pip install --upgrade .
-
-if errorlevel 1 (
+REM Create launcher script
+set LAUNCHER_SCRIPT=run_pwick.bat
+echo Creating launcher script '.\%LAUNCHER_SCRIPT%'...
+(
+    echo @echo off
+    echo REM Launcher for pwick
+    echo REM Activates the virtual environment and runs the application
     echo.
-    echo Installation failed!
-    pause
-    exit /b 1
-)
+    echo set SCRIPT_DIR=%%~dp0
+    echo call "%%SCRIPT_DIR%%venv\Scripts\activate.bat"
+    echo python -m pwick
+    echo deactivate
+) > "%LAUNCHER_SCRIPT%"
 
 echo.
 echo ======================================
-echo   Installation Complete!
+echo   Setup Complete!
 echo ======================================
 echo.
 echo To run pwick, execute:
-echo   pwick
+echo   .\%LAUNCHER_SCRIPT%
 echo.
-echo Or use the Start Menu shortcut (if available).
-echo.
-echo For more information, see:
-echo   README.md - Usage guide
-echo   QUICKREF.md - Quick reference
-echo   SECURITY.md - Security information
-echo.
-echo To uninstall, run:
-echo   pip uninstall pwick
+echo To remove the local environment, run:
+echo   .\uninstall.bat
 echo.
 pause
