@@ -5,14 +5,14 @@
 set -e
 
 echo "======================================"
-echo "  pwick v1.0.0 Local Setup Script"
+echo "  pwick v2.1.0 Local Setup Script"
 echo "======================================"
 echo ""
 
 # Check for Python 3
 if ! command -v python3 &> /dev/null; then
     echo "Error: Python 3 is required but not found."
-    echo "Please install Python 3.7 or higher."
+    echo "Please install Python 3.9 or higher."
     exit 1
 fi
 
@@ -39,7 +39,6 @@ fi
 echo "Installing dependencies..."
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip
-pip install -r requirements.txt
 pip install .
 deactivate
 

@@ -2,7 +2,7 @@
 REM Local setup script for pwick on Windows
 
 echo ======================================
-echo   pwick v1.0.0 Local Setup Script
+echo   pwick v2.1.0 Local Setup Script
 echo ======================================
 echo.
 
@@ -10,7 +10,7 @@ REM Check for Python
 python --version >nul 2>&1
 if errorlevel 1 (
     echo Error: Python is required but not found.
-    echo Please install Python 3.7 or higher from https://www.python.org/
+    echo Please install Python 3.9 or higher from https://www.python.org/
     echo Make sure to check "Add Python to PATH" during installation.
     pause
     exit /b 1
@@ -33,7 +33,6 @@ REM Activate and install dependencies
 echo Installing dependencies...
 call "%VENV_DIR%\Scripts\activate.bat"
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 python -m pip install .
 deactivate
 

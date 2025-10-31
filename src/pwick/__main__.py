@@ -2,7 +2,7 @@
 pwick - Main entry point for the application.
 """
 
-from .ui import run
+from .ui.main_window import run
 
 
 def main():

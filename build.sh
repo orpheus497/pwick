@@ -8,7 +8,8 @@ echo "=== pwick Build Script ==="
 echo ""
 
 # Check for Python 3
-if ! command -v python3 >/dev/null 2>&1; then
+if ! command -v python3 >/dev/null 2>&1;
+    then
     echo "Error: Python 3 is required but not found."
     echo "Please install Python 3 and try again."
     exit 1
@@ -18,7 +19,8 @@ echo "Python 3 found: $(python3 --version)"
 echo ""
 
 # Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+if [ ! -d "venv" ];
+    then
     echo "Creating virtual environment..."
     python3 -m venv venv
     echo "Virtual environment created."
@@ -29,9 +31,11 @@ echo ""
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-if [ -f "venv/bin/activate" ]; then
+if [ -f "venv/bin/activate" ];
+    then
     . venv/bin/activate
-elif [ -f "venv/Scripts/activate" ]; then
+elif [ -f "venv/Scripts/activate" ];
+    then
     . venv/Scripts/activate
 else
     echo "Error: Could not find activation script."
@@ -46,19 +50,20 @@ python -m pip install --upgrade pip
 echo ""
 
 # Install dependencies
-echo "Installing dependencies from requirements.txt..."
-pip install -r requirements.txt
+echo "Installing dependencies from pyproject.toml..."
+pip install .[test]
 echo ""
+
 
 echo "=== Build Complete ==="
 echo ""
 echo "To run the application:"
+
 echo ""
 echo "  On Linux/Mac:"
-echo "    source venv/bin/activate"
-echo "    python -m src.pwick"
-echo ""
+    echo "    source venv/bin/activate"
+    echo "    python -m pwick"
+
 echo "  On Windows:"
-echo "    venv\\Scripts\\activate"
-echo "    python -m src.pwick"
-echo ""
+    echo "    venv\Scripts\activate"
+    echo "    python -m pwick"

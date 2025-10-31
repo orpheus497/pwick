@@ -1,13 +1,13 @@
 # pwick 🛡️
-**Version 1.0.1** - _A simple, secure, and 100% local password manager._
+**Version 2.1.0** - _A simple, secure, and 100% local password manager._
 
 Created by orpheus497.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.0.1-blue)
+![Version](https://img.shields.io/badge/version-2.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
-![Python](https://img.shields.io/badge/python-3.7%2B-blue)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
 pwick is a cross-platform password manager that provides absolute privacy. Your data never leaves your computer, is never sent to a server, and is always protected by strong encryption.
 
@@ -24,36 +24,23 @@ Your most sensitive information—your passwords and notes—remain completely u
 ## Features
 
 ### Security
-*   **Encryption:** AES-256-GCM authenticated encryption with Argon2id key derivation
-    *   Time cost: 3 iterations, Memory cost: 64 MB, Parallelism: 1 thread
-    *   Unique 16-byte salt per vault
-    *   Prevents brute-force, dictionary, and rainbow table attacks
-*   **Master Password:** Never stored on disk, exists only in memory when unlocked
-*   **Encrypted Clipboard:** Passwords encrypted with AES-256-GCM before copying to system clipboard
-    *   Prevents OS telemetry and clipboard snooping
-    *   Session-unique encryption key
-    *   Auto-clears after 30 seconds
-*   **Import/Export:** Encrypted backup functionality for vault transfer
+*   **Encryption:** AES-256-GCM authenticated encryption with Argon2id key derivation.
+*   **Upgradable KDF:** Argon2id parameters are stored in the vault, allowing for security improvements over time.
+*   **Master Password:** Never stored on disk, exists only in memory when unlocked.
+*   **Encrypted Clipboard:** Passwords encrypted with a session-unique AES-256-GCM key before copying to the system clipboard to prevent snooping.
+*   **Secure Clipboard History:** Clipboard history stores encrypted passwords, not plaintext.
+*   **Auto-Clear Clipboard:** Clipboard is automatically cleared after 30 seconds.
+*   **Auto-Lock:** Vault automatically locks after a configurable period of inactivity.
+*   **Import/Export:** Encrypted backup functionality for vault transfer.
 
 ### Interface
 *   **Cross-Platform:** Supports Windows and Linux.
-*   **Modern UI:** Features a dark theme (black, grey, white, and red color scheme) and a tabbed interface for organized management of passwords and notes.
+*   **Modern UI:** Dark theme and a tabbed interface for managing passwords and notes.
+*   **Search:** Filter your passwords and notes with a real-time search bar.
 *   **System Tray:** Minimizes to tray, runs in the background, and restores with a double-click.
-*   **Keyboard Shortcuts:**
-    *   `Ctrl+C`: Copies password
-    *   `Ctrl+N`: Adds a new password entry
-    *   `Ctrl+Shift+N`: Adds a new note entry
-    *   `Ctrl+E`: Edits a password entry
-    *   `Ctrl+Shift+E`: Saves a note entry
-    *   `Delete`: Deletes a password entry
-    *   `Ctrl+Shift+Delete`: Deletes a note entry
-    *   `Ctrl+L`: Locks the vault
-    *   `Ctrl+F`: Focuses/finds an entry
-*   **Clipboard History:** A panel shows the last 30 copied items (refreshes daily).
-*   **Password Generator:** Generates 20-character strong passwords with a show/hide toggle.
-*   **Entry Management:** Creates, edits, and deletes entries with title, username, password, and notes.
-*   **Notes Management:** Dedicated tab for creating, editing, and managing secure notes.
-*   **CSV Import:** Imports password entries from CSV files, handling various field mappings.
+*   **Keyboard Shortcuts:** A full set of keyboard shortcuts for quick access to all major functions.
+*   **Password Generator:** Generates strong, 20-character passwords.
+*   **CSV Import:** Import password entries from CSV files.
 
 ---
 
@@ -75,7 +62,6 @@ install.bat
 
 **Linux/Mac:**
 ```bash
-chmod +x install.sh
 ./install.sh
 ```
 
@@ -83,7 +69,7 @@ These scripts set up a local Python virtual environment and install all necessar
 
 **Windows:**
 ```cmd
-.\run_pwick.bat
+run_pwick.bat
 ```
 
 **Linux/Mac:**
@@ -99,20 +85,18 @@ git clone https://github.com/orpheus497/pwick.git
 cd pwick
 
 # Automated build (sets up local venv and installs dependencies)
-chmod +x build.sh
 ./build.sh
 
 # Manual build (if you prefer to manage the venv yourself)
 python3 -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-pip install .
+pip install -e .
 
 # Run
 python -m pwick
 ```
 
-**Requirements:** Python 3.7+, PyQt5, cryptography, argon2-cffi, pyperclip (all installed automatically by the setup scripts).
+**Requirements:** Python 3.9+, PySide6, cryptography, argon2-cffi, pyperclip, zxcvbn, tomli/tomli-w (all installed automatically by the setup scripts).
 
 ---
 
@@ -138,37 +122,30 @@ To remove the local pwick environment (virtual environment and launcher scripts)
 
 ### Daily Use
 *   Unlock vault with Master Password.
-*   Use the "Passwords" tab to add, edit, copy, or delete password entries.
-*   Use the "Notes" tab to create, edit, or delete secure notes.
+*   Use the "Passwords" and "Notes" tabs to manage your entries.
+*   Use the search bar to quickly find what you need.
 *   **Copy passwords:** Click "Copy Password" or press `Ctrl+C` (auto-clears after 30 seconds).
-*   **Clipboard History:** View last 30 copies, double-click to reuse (refreshes daily).
+*   **Clipboard History:** View last 30 copies, double-click to reuse.
 *   **System Tray:** Close the window to minimize to tray; double-click the tray icon to restore.
-*   Lock the vault when idle.
+*   Lock the vault when idle, or let the auto-lock feature do it for you.
 
 ### Backup and Transfer
-**Export:** File > Export Encrypted Vault → Save encrypted file  
+**Export:** Click "Export Vault" → Save encrypted file  
 **Import:** Choose "Import Existing Vault" → Select file → Enter Master Password
-
----
-
-## Security
-
-*   **Encryption:** AES-256-GCM authenticated encryption.
-*   **Key Derivation:** Argon2id (3 iterations, 64 MB memory, unique salt per vault).
-*   **Master Password:** Never stored on disk.
-*   **Encrypted Clipboard:** Passwords encrypted before copying (prevents telemetry/snooping).
-*   **No Network:** Zero external connections, complete local-first architecture.
 
 ---
 
 ## Acknowledgements
 
+*   **Original Creator:** The design and original implementation of this project were done by orpheus497.
 *   **Keep a Changelog:** For the standardized changelog format.
 *   **Semantic Versioning:** For clear versioning guidelines.
-*   **PyQt5:** For the robust and flexible GUI framework.
-*   **cryptography:** For cryptographic primitives.
-*   **argon2-cffi:** For strong key derivation functions.
-*   **pyperclip:** For cross-platform clipboard operations.
+*   **PySide6** (LGPL v3): For the robust and flexible Qt6 GUI framework.
+*   **cryptography** (Apache 2.0 / BSD): For cryptographic primitives and secure encryption.
+*   **argon2-cffi** (MIT): For strong Argon2id key derivation functions.
+*   **pyperclip** (BSD 3-Clause): For cross-platform clipboard operations.
+*   **zxcvbn** (MIT): For accurate password strength estimation algorithm.
+*   **tomli** / **tomli-w** (MIT): For TOML configuration file support.
 
 ---
 

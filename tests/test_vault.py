@@ -35,9 +35,10 @@ class TestVault(unittest.TestCase):
         self.assertIsNotNone(vault_data)
         self.assertIn('metadata', vault_data)
         self.assertIn('entries', vault_data)
-        self.assertEqual(vault_data['metadata']['version'], '1.0')
+        self.assertEqual(vault_data['metadata']['version'], '2.0')
         self.assertEqual(len(vault_data['entries']), 0)
         self.assertTrue(os.path.exists(self.vault_path))
+        self.assertIn('argon2_params', vault_data['metadata'])
     
     def test_load_vault(self):
         """Test loading an existing vault."""
@@ -76,7 +77,29 @@ class TestVault(unittest.TestCase):
         self.assertEqual(entry['username'], 'testuser')
         self.assertEqual(entry['password'], 'testpass123')
         self.assertEqual(entry['notes'], 'Some notes')
-    
+        self.assertEqual(entry['type'], 'password')
+
+    def test_add_note(self):
+        """Test adding a note entry to the vault."""
+        vault_data = vault.create_vault(self.vault_path, self.master_password)
+        
+        note_id = vault.add_note(
+            vault_data,
+            'Test Note',
+            'This is the content of the note.'
+        )
+        
+        self.assertIsNotNone(note_id)
+        self.assertEqual(len(vault_data['entries']), 1)
+        
+        entry = vault_data['entries'][0]
+        self.assertEqual(entry['id'], note_id)
+        self.assertEqual(entry['title'], 'Test Note')
+        self.assertEqual(entry['notes'], 'This is the content of the note.')
+        self.assertEqual(entry['type'], 'note')
+        self.assertEqual(entry['username'], '')
+        self.assertEqual(entry['password'], '')
+
     def test_update_entry(self):
         """Test updating an entry."""
         vault_data = vault.create_vault(self.vault_path, self.master_password)
@@ -94,6 +117,23 @@ class TestVault(unittest.TestCase):
         self.assertEqual(entry['title'], 'Updated Test')
         self.assertEqual(entry['username'], 'newuser')
         self.assertEqual(entry['password'], 'pass')  # Unchanged
+
+    def test_update_note(self):
+        """Test updating a note entry."""
+        vault_data = vault.create_vault(self.vault_path, self.master_password)
+        note_id = vault.add_note(vault_data, 'Test Note', 'Initial content')
+        
+        result = vault.update_note(
+            vault_data,
+            note_id,
+            title='Updated Note Title',
+            content='Updated note content.'
+        )
+        
+        self.assertTrue(result)
+        entry = vault_data['entries'][0]
+        self.assertEqual(entry['title'], 'Updated Note Title')
+        self.assertEqual(entry['notes'], 'Updated note content.')
     
     def test_delete_entry(self):
         """Test deleting an entry."""

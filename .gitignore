@@ -43,3 +43,8 @@ Thumbs.db
 *.vault
 *.encrypted
 test_vault_*.json
+.pytest_cache/
+
+# AI-generated docs and sessions
+.dev-docs/
+.claude/
