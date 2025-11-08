@@ -28,6 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings validation for all new configuration options
 - TESTING.md documentation with comprehensive testing procedures and guidelines
 - Log file patterns and backup directory patterns added to .gitignore
+- Tag management UI in entry dialog with autocomplete and removable tag chips
+- Pin checkbox in entry dialog for marking entries as favorites
+- Password age display in entry dialog showing time since last password change
+- Visual pin indicator (📌 emoji) for pinned entries in entry lists
+- Tag display in entry lists showing all tags for each entry
+- Automatic sorting with pinned entries at the top of lists
+- Tag Manager dialog for centralized tag management (rename, merge, delete tags)
+- Tag Manager accessible from Tools menu
+- Password Management tab in Settings dialog for history and expiration settings
+- Backup tab in Settings dialog for auto-backup configuration
+- Logging tab in Settings dialog for log level and file size configuration
+- Theme selection in Appearance tab of Settings dialog (Dark/Light)
+- Backup location browser in Settings dialog for custom backup paths
 
 ### Changed
 - Vault Entry TypedDict now includes `last_password_change` field for password age tracking
@@ -44,6 +57,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Application startup now loads and applies theme from user settings
 - Main window imports logging_config and themes modules
 - CSV export function verified present and working (not a bug as initially assessed)
+- Entry dialog (entry_dialog.py) completely rewritten with tag management and pin functionality
+- Entry dialog now accepts `all_tags` parameter for tag autocomplete
+- Entry dialog now returns tags and pinned status in result data
+- Main window `_add_password_entry()` now passes tags and pinned to vault
+- Main window `_edit_password_entry()` now passes tags and pinned to vault
+- Main window `_refresh_lists()` now shows pin indicators and tag displays
+- Main window entry lists now sort pinned entries at the top automatically
+- Settings dialog now has 7 tabs instead of 4 (added Password Management, Backup, Logging)
+- Settings dialog Appearance tab now allows theme switching (Dark/Light)
+- Settings dialog now includes backup location browser for custom backup paths
+- Settings dialog expanded from 355 lines to 560+ lines with new functionality
 
 ### Fixed
 - Vault integrity verification prevents use of corrupted or tampered vault files

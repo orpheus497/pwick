@@ -34,6 +34,7 @@ from .widgets.entry_dialog import EntryDialog
 from .widgets.settings_dialog import SettingsDialog
 from .widgets.security_audit_dialog import SecurityAuditDialog
 from .widgets.password_history_dialog import PasswordHistoryDialog
+from .widgets.tag_manager_dialog import TagManagerDialog
 
 # Initialize module logger
 logger = get_logger(__name__)
@@ -404,6 +405,12 @@ class MainWindow(QMainWindow):
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
 
+        tag_manager_action = QAction("Manage Tags...", self)
+        tag_manager_action.triggered.connect(self._open_tag_manager)
+        tools_menu.addAction(tag_manager_action)
+
+        tools_menu.addSeparator()
+
         settings_action = QAction("Settings...", self)
         settings_action.triggered.connect(self._open_settings_dialog)
         tools_menu.addAction(settings_action)
@@ -606,9 +613,29 @@ class MainWindow(QMainWindow):
         self.entry_list.clear()
         self.note_list.clear()
         if self.vault_data:
-            for entry in self.vault_data['entries']:
-                item = QListWidgetItem(entry['title'])
+            # Sort entries: pinned first, then alphabetical
+            entries = sorted(
+                self.vault_data['entries'],
+                key=lambda e: (not e.get('pinned', False), e['title'].lower())
+            )
+
+            for entry in entries:
+                # Build display text with pin indicator and tags
+                display_text = entry['title']
+
+                # Add pin indicator
+                if entry.get('pinned', False):
+                    display_text = f"📌 {display_text}"
+
+                # Add tags (if any)
+                tags = entry.get('tags', [])
+                if tags:
+                    tag_text = ', '.join(tags)
+                    display_text = f"{display_text} [{tag_text}]"
+
+                item = QListWidgetItem(display_text)
                 item.setData(Qt.UserRole, entry['id'])
+
                 if entry.get('type', 'password') == 'password':
                     self.entry_list.addItem(item)
                 elif entry.get('type') == 'note':
@@ -702,9 +729,23 @@ class MainWindow(QMainWindow):
                 if entry['id'] == entry_id:
                     return entry
         return None
+
+    def _get_all_tags(self) -> list[str]:
+        """Collect all unique tags from vault entries for autocomplete."""
+        if not self.vault_data:
+            return []
+
+        all_tags = set()
+        for entry in self.vault_data['entries']:
+            tags = entry.get('tags', [])
+            if tags:
+                all_tags.update(tags)
+
+        return sorted(list(all_tags))
     
     def _add_password_entry(self):
-        dialog = EntryDialog(settings=self.settings, parent=self)
+        all_tags = self._get_all_tags()
+        dialog = EntryDialog(settings=self.settings, all_tags=all_tags, parent=self)
         if dialog.exec() == QDialog.Accepted:
             data = dialog.result_data
             vault.add_entry(
@@ -713,7 +754,9 @@ class MainWindow(QMainWindow):
                 data['username'],
                 data['password'],
                 data['notes'],
-                entry_type='password'
+                entry_type='password',
+                tags=data.get('tags', []),
+                pinned=data.get('pinned', False)
             )
             self._save_vault()
             self._refresh_lists()
@@ -725,7 +768,8 @@ class MainWindow(QMainWindow):
 
         entry = self._find_entry(self.current_entry_id)
         if entry and entry.get('type', 'password') == 'password':
-            dialog = EntryDialog(entry_data=entry, settings=self.settings, parent=self)
+            all_tags = self._get_all_tags()
+            dialog = EntryDialog(entry_data=entry, settings=self.settings, all_tags=all_tags, parent=self)
             if dialog.exec() == QDialog.Accepted:
                 data = dialog.result_data
                 vault.update_entry(
@@ -850,6 +894,20 @@ class MainWindow(QMainWindow):
         self.auto_lock_timer.stop()
         self._show_welcome()
         logger.info("Vault locked successfully")
+
+    def _open_tag_manager(self):
+        """Open the tag manager dialog."""
+        if not self.vault_data:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = TagManagerDialog(self.vault_data, self)
+        dialog.exec()
+
+        # If tags were modified, save vault and refresh lists
+        if dialog.modified:
+            self._save_vault()
+            self._refresh_lists()
 
     def _open_settings_dialog(self):
         """Open the settings dialog."""
