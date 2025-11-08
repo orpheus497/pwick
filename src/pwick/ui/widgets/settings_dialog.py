@@ -389,10 +389,10 @@ class SettingsDialog(QDialog):
         theme_layout = QFormLayout()
 
         self.theme_combo = QComboBox()
-        self.theme_combo.addItems(["Dark", "Light"])
+        self.theme_combo.addItems(["Dark", "Light", "Auto"])
         theme_layout.addRow("Color theme:", self.theme_combo)
 
-        theme_help = QLabel("Choose between dark and light color themes.\n"
+        theme_help = QLabel("Choose between dark and light color themes, or Auto to match system theme.\n"
                            "Changing the theme requires restarting the application.")
         theme_help.setWordWrap(True)
         theme_help.setStyleSheet("color: #999; font-size: 10px;")
@@ -457,7 +457,8 @@ class SettingsDialog(QDialog):
 
         # Appearance tab
         theme = self.settings.get('theme', 'dark')
-        self.theme_combo.setCurrentIndex(0 if theme == 'dark' else 1)
+        theme_map = {'dark': 0, 'light': 1, 'auto': 2}
+        self.theme_combo.setCurrentIndex(theme_map.get(theme, 0))
 
     def _collect_settings_from_ui(self) -> dict:
         """Collect settings from UI controls into a dictionary."""
@@ -499,7 +500,7 @@ class SettingsDialog(QDialog):
         settings['vault_argon2_hash_len'] = self.settings['vault_argon2_hash_len']  # Not exposed in UI
 
         # Appearance tab
-        theme_values = ['dark', 'light']
+        theme_values = ['dark', 'light', 'auto']
         settings['theme'] = theme_values[self.theme_combo.currentIndex()]
 
         # Entry sorting (not exposed in UI yet, preserve existing)

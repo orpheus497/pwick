@@ -1,12 +1,12 @@
 # pwick 🛡️
-**Version 2.3.0** - _A simple, secure, and 100% local password manager._
+**Version 2.4.0** - _A simple, secure, and 100% local password manager._
 
 Created by orpheus497.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Version](https://img.shields.io/badge/version-2.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
 pwick is a cross-platform password manager that provides absolute privacy. Your data never leaves your computer, is never sent to a server, and is always protected by strong encryption.
@@ -39,8 +39,9 @@ Your most sensitive information—your passwords and notes—remain completely u
 *   **Import/Export:** Encrypted backup functionality for vault transfer.
 
 ### Interface
-*   **Cross-Platform:** Supports Windows and Linux.
-*   **Modern UI:** Choose between dark and light themes with a tabbed interface for managing passwords and notes.
+*   **Cross-Platform:** Supports Windows, Linux, and macOS with platform-native features.
+*   **Modern UI:** Choose between dark, light, or auto themes (auto matches your system theme) with a tabbed interface for managing passwords and notes.
+*   **Command Palette:** Quick command launcher with fuzzy search (`Ctrl+K`) for fast access to all functions.
 *   **Tag Management:** Organize entries with tags, featuring autocomplete and removable chips.
 *   **Pinned Entries:** Pin important entries to keep them at the top of your list.
 *   **Advanced Search:** Real-time text search combined with tag and pinned status filtering.
@@ -50,6 +51,8 @@ Your most sensitive information—your passwords and notes—remain completely u
 *   **Keyboard Shortcuts:** A full set of keyboard shortcuts for quick access to all major functions.
 *   **Password Generator:** Generates strong, customizable passwords.
 *   **Password Strength Meter:** Visual feedback using zxcvbn algorithm.
+*   **Enhanced Import:** Import from KeePass, Bitwarden (JSON/CSV), LastPass, 1Password, and generic CSV with auto-format detection.
+*   **Backup Manager UI:** Visual backup browser with one-click restore, manual backup creation, and automatic cleanup.
 *   **CSV Import/Export:** Import and export password entries from/to CSV files.
 *   **Comprehensive Settings:** 7-tab settings dialog for fine-grained control.
 *   **Application Logging:** Configurable logging with sensitive data sanitization.
@@ -65,7 +68,29 @@ Your most sensitive information—your passwords and notes—remain completely u
 
 ## Installation
 
-### Quick Install
+### Standalone Executables (Recommended)
+
+Build a single-file executable that doesn't require Python installation:
+
+**Windows:**
+```cmd
+build_exe.bat
+```
+
+**Linux/macOS:**
+```bash
+./build_exe.sh
+```
+
+The executable will be created in the `dist/` folder. See [BUILD.md](BUILD.md) for detailed build instructions.
+
+**Advantages:**
+- No Python installation required
+- Single executable file
+- Faster startup time
+- Easy distribution
+
+### Quick Install (Python)
 
 **Windows:**
 ```cmd
@@ -110,6 +135,32 @@ python -m pwick
 
 **Requirements:** Python 3.9+, PySide6, cryptography, argon2-cffi, pyperclip, zxcvbn, tomli/tomli-w (all installed automatically by the setup scripts).
 
+### Linux Additional Requirements
+
+For clipboard functionality on Linux, you need `xclip` or `xsel` installed:
+
+**Debian/Ubuntu:**
+```bash
+sudo apt install xclip
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install xclip
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S xclip
+```
+
+**Alternative (xsel):**
+```bash
+sudo apt install xsel  # Use xsel instead of xclip
+```
+
+**Note:** Users on Wayland-based systems may experience clipboard issues. If you encounter problems, please report them in the GitHub issues.
+
 ---
 
 ## Uninstallation
@@ -135,6 +186,7 @@ To remove the local pwick environment (virtual environment and launcher scripts)
 ### Daily Use
 *   Unlock vault with Master Password.
 *   Use the "Passwords" and "Notes" tabs to manage your entries.
+*   **Command Palette:** Press `Ctrl+K` to open the command palette for quick access to any function with fuzzy search.
 *   **Search & Filter:** Use the search bar combined with tag and pinned filters to quickly find entries.
 *   **Sorting:** Choose from 6 sorting modes to organize your entries (A-Z, Z-A, by date, etc.).
 *   **Tags:** Add tags to entries for better organization; use the Tag Manager (Tools menu) for bulk operations.
@@ -143,7 +195,9 @@ To remove the local pwick environment (virtual environment and launcher scripts)
 *   **Clipboard History:** View last 30 copies, double-click to reuse.
 *   **Password Age:** See how old passwords are and receive expiration warnings.
 *   **Security Audit:** Run periodic security audits (Tools menu) to find weak or duplicate passwords.
-*   **Settings:** Configure all features via the comprehensive Settings dialog (Tools menu).
+*   **Backup Manager:** Access visual backup browser (Tools menu) to view, restore, and manage vault backups.
+*   **Import from Other Managers:** Use the Import Wizard (File menu) to migrate from KeePass, Bitwarden, LastPass, or 1Password.
+*   **Settings:** Configure all features including auto theme detection via the comprehensive Settings dialog (Tools menu).
 *   **System Tray:** Close the window to minimize to tray; double-click the tray icon to restore.
 *   Lock the vault when idle, or let the auto-lock feature do it for you.
 
@@ -164,6 +218,8 @@ To remove the local pwick environment (virtual environment and launcher scripts)
 *   **pyperclip** (BSD 3-Clause): For cross-platform clipboard operations.
 *   **zxcvbn** (MIT): For accurate password strength estimation algorithm.
 *   **tomli** / **tomli-w** (MIT): For TOML configuration file support.
+*   **PyInstaller** (GPL v2 + exception): For standalone executable creation.
+*   **pytest** / **pytest-qt** (MIT): For comprehensive testing framework.
 
 ---
 

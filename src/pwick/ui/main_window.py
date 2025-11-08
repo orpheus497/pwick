@@ -3,6 +3,8 @@ pwick - GUI implementation using PySide6.
 Provides a desktop interface for the password manager with a dark theme.
 """
 
+from __future__ import annotations
+
 import sys
 import secrets
 import string
@@ -27,6 +29,7 @@ import csv
 from .. import vault
 from ..config import load_settings, save_settings
 from ..logging_config import setup_logging, get_logger
+from ..system_theme import get_auto_theme
 from .themes import get_stylesheet
 from .widgets.welcome_dialog import WelcomeDialog
 from .widgets.master_password_dialog import MasterPasswordDialog
@@ -35,6 +38,9 @@ from .widgets.settings_dialog import SettingsDialog
 from .widgets.security_audit_dialog import SecurityAuditDialog
 from .widgets.password_history_dialog import PasswordHistoryDialog
 from .widgets.tag_manager_dialog import TagManagerDialog
+from .widgets.backup_manager_dialog import BackupManagerDialog
+from .widgets.import_wizard_dialog import ImportWizardDialog
+from .widgets.command_palette_dialog import create_command_palette
 
 # Initialize module logger
 logger = get_logger(__name__)
@@ -56,21 +62,28 @@ class EncryptedClipboard:
         """
         Encrypt plaintext and copy to clipboard.
         Format: PWICK_ENC:<base64(nonce||ciphertext||tag)>
+
+        Raises:
+            Exception: If clipboard operation fails
         """
         if not plaintext:
             return
-        
+
         # Generate random nonce
         nonce = secrets.token_bytes(12)
-        
+
         # Encrypt the plaintext
         ciphertext = self.cipher.encrypt(nonce, plaintext.encode('utf-8'), None)
-        
+
         # Combine nonce + ciphertext and encode as base64
         encrypted_blob = base64.b64encode(nonce + ciphertext).decode('ascii')
-        
-        # Copy to clipboard with prefix
-        pyperclip.copy(self.prefix + encrypted_blob)
+
+        # Copy to clipboard with prefix (may raise exception if clipboard unavailable)
+        try:
+            pyperclip.copy(self.prefix + encrypted_blob)
+        except Exception as e:
+            # Re-raise with more context
+            raise Exception(f"Clipboard access failed: {e}") from e
     
     def paste_decrypted(self) -> Optional[str]:
         """
@@ -131,7 +144,43 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._setup_menu_bar()
         self._setup_shortcuts()
+
+        # Setup command palette
+        self.command_palette = create_command_palette(self)
+
         self._show_welcome()
+
+    def _safe_clipboard_copy(self, text: str, encrypted: bool = True) -> bool:
+        """
+        Safely copy text to clipboard with error handling.
+
+        Args:
+            text: Text to copy
+            encrypted: Whether to encrypt before copying (default: True)
+
+        Returns:
+            True if successful, False if clipboard operation failed
+        """
+        try:
+            if encrypted:
+                self.encrypted_clipboard.copy_encrypted(text)
+            else:
+                pyperclip.copy(text)
+            return True
+        except Exception as e:
+            logger.warning(f"Clipboard operation failed: {e}")
+            QMessageBox.warning(
+                self,
+                "Clipboard Error",
+                f"Could not access system clipboard.\n\n"
+                f"Error: {e}\n\n"
+                f"On Linux, install clipboard support:\n"
+                f"  Ubuntu/Debian: sudo apt install xclip\n"
+                f"  Fedora: sudo dnf install xclip\n"
+                f"  Arch: sudo pacman -S xclip\n\n"
+                f"The password is still available in the entry dialog."
+            )
+            return False
 
     def event(self, event):
         """Reset auto-lock timer on user activity."""
@@ -419,6 +468,10 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
 
+        import_wizard_action = QAction("Import Wizard...", self)
+        import_wizard_action.triggered.connect(self._open_import_wizard)
+        file_menu.addAction(import_wizard_action)
+
         import_csv_action = QAction("Import from CSV...", self)
         import_csv_action.triggered.connect(self._import_csv)
         file_menu.addAction(import_csv_action)
@@ -448,19 +501,25 @@ class MainWindow(QMainWindow):
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
 
+        backup_manager_action = QAction("Backup Manager...", self)
+        backup_manager_action.triggered.connect(self._open_backup_manager)
+        tools_menu.addAction(backup_manager_action)
+
         tag_manager_action = QAction("Manage Tags...", self)
         tag_manager_action.triggered.connect(self._open_tag_manager)
         tools_menu.addAction(tag_manager_action)
 
         tools_menu.addSeparator()
 
-        settings_action = QAction("Settings...", self)
-        settings_action.triggered.connect(self._open_settings_dialog)
-        tools_menu.addAction(settings_action)
-
         audit_action = QAction("Security Audit...", self)
         audit_action.triggered.connect(self._run_security_audit)
         tools_menu.addAction(audit_action)
+
+        tools_menu.addSeparator()
+
+        settings_action = QAction("Settings...", self)
+        settings_action.triggered.connect(self._open_settings)
+        tools_menu.addAction(settings_action)
 
         # Help menu
         help_menu = menubar.addMenu("&Help")
@@ -497,13 +556,21 @@ class MainWindow(QMainWindow):
         
         lock_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_L), self)
         lock_shortcut.activated.connect(self._lock_vault)
-        
+
+        # Command Palette (Ctrl+K)
+        command_palette_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_K), self)
+        command_palette_shortcut.activated.connect(self._show_command_palette)
+
         focus_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.Find), self)
         focus_shortcut.activated.connect(lambda: self.search_passwords.setFocus() if self.tabs.currentIndex() == 0 else self.search_notes.setFocus())
 
     def _clear_clipboard(self):
-        pyperclip.copy('')
-        self.statusBar().showMessage("Clipboard cleared for security", 2000)
+        try:
+            pyperclip.copy('')
+            self.statusBar().showMessage("Clipboard cleared for security", 2000)
+        except Exception as e:
+            logger.warning(f"Failed to clear clipboard: {e}")
+            # Silently fail for clipboard clear - not critical
 
     def _add_to_clipboard_history(self, title: str, text: str):
         """
@@ -544,14 +611,14 @@ class MainWindow(QMainWindow):
     def _on_clipboard_history_double_click(self, item):
         password_text = item.data(Qt.UserRole)
         if password_text:
-            # Encrypt before copying to clipboard
-            self.encrypted_clipboard.copy_encrypted(password_text)
-            timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
-            self.clipboard_timer.start(timeout_ms)
-            self.statusBar().showMessage(
-                f"Copied from history (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                2000
-            )
+            # Encrypt before copying to clipboard (with error handling)
+            if self._safe_clipboard_copy(password_text, encrypted=True):
+                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                self.clipboard_timer.start(timeout_ms)
+                self.statusBar().showMessage(
+                    f"Copied from history (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
+                    2000
+                )
 
     def _show_welcome(self):
         dialog = WelcomeDialog(self)
@@ -988,14 +1055,15 @@ class MainWindow(QMainWindow):
         entry = self._find_entry(self.current_entry_id)
         if entry and entry.get('type', 'password') == 'password':
             password_text = entry['password']
-            self.encrypted_clipboard.copy_encrypted(password_text)
-            self._add_to_clipboard_history(entry['title'], password_text)
-            timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
-            self.clipboard_timer.start(timeout_ms)
-            self.statusBar().showMessage(
-                f"Password copied to clipboard (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                3000
-            )
+            # Use safe clipboard copy with error handling
+            if self._safe_clipboard_copy(password_text, encrypted=True):
+                self._add_to_clipboard_history(entry['title'], password_text)
+                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                self.clipboard_timer.start(timeout_ms)
+                self.statusBar().showMessage(
+                    f"Password copied to clipboard (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
+                    3000
+                )
     
     def _export_vault(self):
         path, _ = QFileDialog.getSaveFileName(
@@ -1060,6 +1128,56 @@ class MainWindow(QMainWindow):
 
         dialog = SecurityAuditDialog(self.vault_data, self)
         dialog.exec()
+
+    def _open_backup_manager(self):
+        """Open the backup manager dialog."""
+        if not self.vault_path:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = BackupManagerDialog(self.vault_path, self.settings, self)
+        result = dialog.exec()
+
+        # If vault was restored, we should reload it
+        if result == QDialog.Accepted:
+            # Prompt user to reload vault
+            reply = QMessageBox.question(
+                self,
+                "Reload Vault?",
+                "Would you like to reload the vault to see the restored data?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+            if reply == QMessageBox.Yes:
+                self._lock_vault()
+
+    def _open_import_wizard(self):
+        """Open the import wizard dialog."""
+        if not self.vault_data or not self.vault_path:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = ImportWizardDialog(self.vault_data, self)
+        result = dialog.exec()
+
+        # If import succeeded, save vault and refresh lists
+        if result == QDialog.Accepted:
+            vault.save_vault(self.vault_path, self.vault_data, self.master_password)
+            self._refresh_lists()
+            QMessageBox.information(
+                self,
+                "Import Complete",
+                "Passwords imported successfully! Vault has been saved."
+            )
+
+    def _show_command_palette(self):
+        """Show the command palette."""
+        if self.command_palette:
+            self.command_palette.exec()
+
+    def _open_settings(self):
+        """Open settings dialog (alias for _open_settings_dialog)."""
+        self._open_settings_dialog()
 
     def _show_password_history(self):
         """Show password history for selected entry."""
@@ -1185,8 +1303,14 @@ def run():
     # Create application
     app = QApplication(sys.argv)
 
-    # Apply theme from settings
-    theme = settings.get('theme', 'dark')
+    # Apply theme from settings (with auto-detection support)
+    theme_setting = settings.get('theme', 'dark')
+    if theme_setting == 'auto':
+        # Auto-detect system theme
+        theme = get_auto_theme()
+        logger.info(f"Auto-detected system theme: {theme}")
+    else:
+        theme = theme_setting
     stylesheet = get_stylesheet(theme)
     app.setStyleSheet(stylesheet)
     logger.info(f"Applied {theme} theme")

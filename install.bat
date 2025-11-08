@@ -1,8 +1,9 @@
 @echo off
 REM Local setup script for pwick on Windows
 
+set /p VERSION=<VERSION
 echo ======================================
-echo   pwick v2.1.0 Local Setup Script
+echo   pwick v%VERSION% Local Setup Script
 echo ======================================
 echo.
 

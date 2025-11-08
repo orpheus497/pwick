@@ -149,11 +149,23 @@ class PasswordHistoryDialog(QDialog):
         )
 
         if reply == QMessageBox.Yes:
-            # Encrypt and copy to clipboard
-            self.encrypted_clipboard.copy_encrypted(password)
-            QMessageBox.information(
-                self,
-                "Password Copied",
-                "Old password has been copied to clipboard (encrypted).\n"
-                "It will be automatically cleared in 30 seconds."
-            )
+            # Encrypt and copy to clipboard with error handling
+            try:
+                self.encrypted_clipboard.copy_encrypted(password)
+                QMessageBox.information(
+                    self,
+                    "Password Copied",
+                    "Old password has been copied to clipboard (encrypted).\n"
+                    "It will be automatically cleared in 30 seconds."
+                )
+            except Exception as e:
+                QMessageBox.warning(
+                    self,
+                    "Clipboard Error",
+                    f"Could not access system clipboard.\n\n"
+                    f"Error: {e}\n\n"
+                    f"On Linux, install clipboard support:\n"
+                    f"  Ubuntu/Debian: sudo apt install xclip\n"
+                    f"  Fedora: sudo dnf install xclip\n"
+                    f"  Arch: sudo pacman -S xclip"
+                )

@@ -5,6 +5,8 @@ Provides dark and light theme stylesheets for the application,
 with a function to get the appropriate theme based on user settings.
 """
 
+from __future__ import annotations
+
 from typing import Literal
 
 ThemeName = Literal["dark", "light"]
