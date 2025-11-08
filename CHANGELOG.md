@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Install scripts now dynamically read version from VERSION file instead of hardcoded strings
 
 ### Added
+- **Backup Manager UI**: Visual backup browser with list view, one-click restore, manual backup creation, and automatic cleanup
+- **System Theme Auto-Detection**: Automatic theme matching with OS dark/light mode on Windows, macOS, and Linux
+- **Enhanced Import System**: Support for importing from KeePass, Bitwarden (JSON/CSV), LastPass, and 1Password with automatic format detection
+- **Import Wizard Dialog**: User-friendly import wizard with file browser, format auto-detection, and detailed progress reporting
+- **Command Palette**: VS Code-style quick command launcher with fuzzy search accessible via `Ctrl+K`
+- **PyInstaller Build Scripts**: Cross-platform scripts (`build_exe.sh`, `build_exe.bat`) for creating standalone executables
+- **UI Test Suite**: Comprehensive UI tests using pytest-qt covering all dialogs and widgets (test_ui_widgets.py)
+- **Importer Tests**: Full test coverage for all import formats and error handling (test_importers.py)
+- **System Theme Tests**: Complete test suite for cross-platform theme detection (test_system_theme.py)
+- **Auto Theme Setting**: "Auto" option in settings dialog theme dropdown for automatic system theme matching
+- **BUILD.md Documentation**: Comprehensive build documentation with troubleshooting and customization guides
 - Input length validation for all text fields to prevent memory exhaustion attacks
 - Maximum length constraints: title (256), username (256), password (1024), notes (10,000), tags (50 chars, 50 max)
 - Character counter for notes field with color-coded visual feedback
@@ -31,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Safe clipboard copy wrapper method with automatic error recovery
 
 ### Changed
+- **Theme System**: Extended to support 'auto' mode in addition to 'dark' and 'light'
+- **README**: Updated with standalone executable instructions, new features documentation, and enhanced usage guide
+- **pyproject.toml**: Added optional dependencies for testing (pytest-qt, pytest-cov) and building (pyinstaller)
+- **Settings Dialog**: Enhanced theme dropdown with Auto option and improved help text
+- **Main Window**: Integrated Backup Manager, Import Wizard, and Command Palette with menu items and keyboard shortcuts
 - Version updated from 2.3.0 to 2.4.0 across all files
 - Platform support badge updated to include macOS (Windows | Linux | macOS)
 - Configuration directory structure now platform-aware with proper macOS support
@@ -42,12 +58,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Character counters provide user feedback before hitting limits
 - Validation occurs at UI level (setMaxLength) and business logic level (save validation)
 - Clipboard operations fail gracefully without exposing sensitive data
+- Import validation ensures malformed CSV/JSON files don't crash the application
+- Backup restore operation creates safety backup before overwriting current vault
 
 ### Documentation
+- Added BUILD.md with comprehensive standalone executable build instructions
 - Added Linux clipboard requirements section to README
+- Updated README with all new features (Backup Manager, Import Wizard, Command Palette, Auto Theme)
 - Updated platform badge to include macOS
-- Improved installation documentation with platform-specific requirements
+- Improved installation documentation with standalone executable section
+- Added platform-specific requirements documentation
 - Added Wayland compatibility notes for Linux users
+- Enhanced acknowledgements section with PyInstaller and pytest credits
 
 ## [2.3.0] - 2025-11-08
 

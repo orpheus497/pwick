@@ -100,7 +100,7 @@ def get_default_settings() -> Dict[str, Any]:
         'auto_backup_keep_count': 5,
 
         # Appearance settings
-        'theme': 'dark',  # 'dark' or 'light'
+        'theme': 'dark',  # 'dark', 'light', or 'auto' (auto-detect from system)
 
         # Logging settings
         'log_level': 'INFO',  # 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
@@ -286,7 +286,7 @@ def validate_settings(settings: Dict[str, Any]) -> Dict[str, Any]:
         validated['auto_backup_keep_count'] = 50
 
     # Validate theme
-    if validated['theme'] not in ['dark', 'light']:
+    if validated['theme'] not in ['dark', 'light', 'auto']:
         validated['theme'] = 'dark'
 
     # Validate log_level

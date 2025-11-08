@@ -29,6 +29,7 @@ import csv
 from .. import vault
 from ..config import load_settings, save_settings
 from ..logging_config import setup_logging, get_logger
+from ..system_theme import get_auto_theme
 from .themes import get_stylesheet
 from .widgets.welcome_dialog import WelcomeDialog
 from .widgets.master_password_dialog import MasterPasswordDialog
@@ -37,6 +38,9 @@ from .widgets.settings_dialog import SettingsDialog
 from .widgets.security_audit_dialog import SecurityAuditDialog
 from .widgets.password_history_dialog import PasswordHistoryDialog
 from .widgets.tag_manager_dialog import TagManagerDialog
+from .widgets.backup_manager_dialog import BackupManagerDialog
+from .widgets.import_wizard_dialog import ImportWizardDialog
+from .widgets.command_palette_dialog import create_command_palette
 
 # Initialize module logger
 logger = get_logger(__name__)
@@ -140,6 +144,10 @@ class MainWindow(QMainWindow):
         self._setup_ui()
         self._setup_menu_bar()
         self._setup_shortcuts()
+
+        # Setup command palette
+        self.command_palette = create_command_palette(self)
+
         self._show_welcome()
 
     def _safe_clipboard_copy(self, text: str, encrypted: bool = True) -> bool:
@@ -460,6 +468,10 @@ class MainWindow(QMainWindow):
         # File menu
         file_menu = menubar.addMenu("&File")
 
+        import_wizard_action = QAction("Import Wizard...", self)
+        import_wizard_action.triggered.connect(self._open_import_wizard)
+        file_menu.addAction(import_wizard_action)
+
         import_csv_action = QAction("Import from CSV...", self)
         import_csv_action.triggered.connect(self._import_csv)
         file_menu.addAction(import_csv_action)
@@ -489,19 +501,25 @@ class MainWindow(QMainWindow):
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
 
+        backup_manager_action = QAction("Backup Manager...", self)
+        backup_manager_action.triggered.connect(self._open_backup_manager)
+        tools_menu.addAction(backup_manager_action)
+
         tag_manager_action = QAction("Manage Tags...", self)
         tag_manager_action.triggered.connect(self._open_tag_manager)
         tools_menu.addAction(tag_manager_action)
 
         tools_menu.addSeparator()
 
-        settings_action = QAction("Settings...", self)
-        settings_action.triggered.connect(self._open_settings_dialog)
-        tools_menu.addAction(settings_action)
-
         audit_action = QAction("Security Audit...", self)
         audit_action.triggered.connect(self._run_security_audit)
         tools_menu.addAction(audit_action)
+
+        tools_menu.addSeparator()
+
+        settings_action = QAction("Settings...", self)
+        settings_action.triggered.connect(self._open_settings)
+        tools_menu.addAction(settings_action)
 
         # Help menu
         help_menu = menubar.addMenu("&Help")
@@ -538,7 +556,11 @@ class MainWindow(QMainWindow):
         
         lock_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_L), self)
         lock_shortcut.activated.connect(self._lock_vault)
-        
+
+        # Command Palette (Ctrl+K)
+        command_palette_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_K), self)
+        command_palette_shortcut.activated.connect(self._show_command_palette)
+
         focus_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.Find), self)
         focus_shortcut.activated.connect(lambda: self.search_passwords.setFocus() if self.tabs.currentIndex() == 0 else self.search_notes.setFocus())
 
@@ -1107,6 +1129,56 @@ class MainWindow(QMainWindow):
         dialog = SecurityAuditDialog(self.vault_data, self)
         dialog.exec()
 
+    def _open_backup_manager(self):
+        """Open the backup manager dialog."""
+        if not self.vault_path:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = BackupManagerDialog(self.vault_path, self.settings, self)
+        result = dialog.exec()
+
+        # If vault was restored, we should reload it
+        if result == QDialog.Accepted:
+            # Prompt user to reload vault
+            reply = QMessageBox.question(
+                self,
+                "Reload Vault?",
+                "Would you like to reload the vault to see the restored data?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
+            if reply == QMessageBox.Yes:
+                self._lock_vault()
+
+    def _open_import_wizard(self):
+        """Open the import wizard dialog."""
+        if not self.vault_data or not self.vault_path:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = ImportWizardDialog(self.vault_data, self)
+        result = dialog.exec()
+
+        # If import succeeded, save vault and refresh lists
+        if result == QDialog.Accepted:
+            vault.save_vault(self.vault_path, self.vault_data, self.master_password)
+            self._refresh_lists()
+            QMessageBox.information(
+                self,
+                "Import Complete",
+                "Passwords imported successfully! Vault has been saved."
+            )
+
+    def _show_command_palette(self):
+        """Show the command palette."""
+        if self.command_palette:
+            self.command_palette.exec()
+
+    def _open_settings(self):
+        """Open settings dialog (alias for _open_settings_dialog)."""
+        self._open_settings_dialog()
+
     def _show_password_history(self):
         """Show password history for selected entry."""
         if not self.current_entry_id:
@@ -1231,8 +1303,14 @@ def run():
     # Create application
     app = QApplication(sys.argv)
 
-    # Apply theme from settings
-    theme = settings.get('theme', 'dark')
+    # Apply theme from settings (with auto-detection support)
+    theme_setting = settings.get('theme', 'dark')
+    if theme_setting == 'auto':
+        # Auto-detect system theme
+        theme = get_auto_theme()
+        logger.info(f"Auto-detected system theme: {theme}")
+    else:
+        theme = theme_setting
     stylesheet = get_stylesheet(theme)
     app.setStyleSheet(stylesheet)
     logger.info(f"Applied {theme} theme")
