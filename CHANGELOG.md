@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logging tab in Settings dialog for log level and file size configuration
 - Theme selection in Appearance tab of Settings dialog (Dark/Light)
 - Backup location browser in Settings dialog for custom backup paths
+- Entry sorting options with 6 modes (A-Z, Z-A, Date Created/Modified Newest/Oldest)
+- Sort dropdown in password list interface for user-selectable sorting
+- Advanced filtering by pinned status (All, Pinned Only, Unpinned Only)
+- Advanced filtering by tag with dynamic tag dropdown populated from vault
+- Combined filtering supporting simultaneous text search, pinned status, and tag filtering
+- Tag filter dropdown automatically updates when tags are added, renamed, merged, or deleted
 
 ### Changed
 - Vault Entry TypedDict now includes `last_password_change` field for password age tracking
@@ -68,6 +74,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings dialog Appearance tab now allows theme switching (Dark/Light)
 - Settings dialog now includes backup location browser for custom backup paths
 - Settings dialog expanded from 355 lines to 560+ lines with new functionality
+- Main window password list UI now includes sorting and filtering controls
+- Entry list sorting now configurable with 6 different sorting modes
+- _refresh_lists() method enhanced with dynamic sorting based on user selection
+- _filter_lists() method enhanced with pinned status and tag filtering
+- _populate_tag_filter() method added to dynamically populate tag dropdown
+- Filtering now supports combining text search, pinned status, and tag selection
 
 ### Fixed
 - Vault integrity verification prevents use of corrupted or tampered vault files

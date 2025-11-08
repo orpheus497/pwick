@@ -250,7 +250,50 @@ class MainWindow(QMainWindow):
         self.search_passwords.setPlaceholderText("Search passwords...")
         self.search_passwords.textChanged.connect(self._filter_lists)
         left_panel.addWidget(self.search_passwords)
-        
+
+        # Sorting and filtering controls
+        controls_layout = QHBoxLayout()
+
+        sort_label = QLabel("Sort:")
+        controls_layout.addWidget(sort_label)
+
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItems([
+            "Alphabetical (A-Z)",
+            "Alphabetical (Z-A)",
+            "Date Created (Newest)",
+            "Date Created (Oldest)",
+            "Date Modified (Newest)",
+            "Date Modified (Oldest)"
+        ])
+        self.sort_combo.currentIndexChanged.connect(self._refresh_lists)
+        controls_layout.addWidget(self.sort_combo)
+
+        controls_layout.addSpacing(10)
+
+        filter_label = QLabel("Filter:")
+        controls_layout.addWidget(filter_label)
+
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems([
+            "All Entries",
+            "Pinned Only",
+            "Unpinned Only"
+        ])
+        self.filter_combo.currentIndexChanged.connect(self._filter_lists)
+        controls_layout.addWidget(self.filter_combo)
+
+        tag_label = QLabel("Tag:")
+        controls_layout.addWidget(tag_label)
+
+        self.tag_filter_combo = QComboBox()
+        self.tag_filter_combo.addItem("All Tags")
+        self.tag_filter_combo.currentIndexChanged.connect(self._filter_lists)
+        controls_layout.addWidget(self.tag_filter_combo)
+
+        controls_layout.addStretch()
+        left_panel.addLayout(controls_layout)
+
         self.entry_list = QListWidget()
         self.entry_list.currentItemChanged.connect(self._on_entry_selected)
         left_panel.addWidget(self.entry_list)
@@ -609,14 +652,42 @@ class MainWindow(QMainWindow):
             logger.info("Vault open cancelled by user")
             self._show_welcome()
 
+    def _get_sort_key(self, entry: dict):
+        """Get sort key based on current sort mode."""
+        sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+
+        # Always put pinned entries first
+        pinned_priority = not entry.get('pinned', False)
+
+        if sort_mode == 0:  # Alphabetical (A-Z)
+            return (pinned_priority, entry['title'].lower())
+        elif sort_mode == 1:  # Alphabetical (Z-A)
+            return (pinned_priority, entry['title'].lower()), True  # Reverse flag
+        elif sort_mode == 2:  # Date Created (Newest)
+            return (pinned_priority, entry.get('created_at', '')), True
+        elif sort_mode == 3:  # Date Created (Oldest)
+            return (pinned_priority, entry.get('created_at', ''))
+        elif sort_mode == 4:  # Date Modified (Newest)
+            return (pinned_priority, entry.get('updated_at', '')), True
+        elif sort_mode == 5:  # Date Modified (Oldest)
+            return (pinned_priority, entry.get('updated_at', ''))
+        else:
+            return (pinned_priority, entry['title'].lower())
+
     def _refresh_lists(self):
         self.entry_list.clear()
         self.note_list.clear()
         if self.vault_data:
-            # Sort entries: pinned first, then alphabetical
+            # Get sort mode and determine if reverse is needed
+            sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+            reverse = sort_mode in [1, 2, 4]  # Z-A, Newest Created, Newest Modified
+
+            # Sort entries based on selected mode
             entries = sorted(
                 self.vault_data['entries'],
-                key=lambda e: (not e.get('pinned', False), e['title'].lower())
+                key=lambda e: (not e.get('pinned', False),
+                              e['title'].lower() if sort_mode <= 1 else e.get('created_at' if sort_mode <= 3 else 'updated_at', '')),
+                reverse=reverse
             )
 
             for entry in entries:
@@ -640,14 +711,50 @@ class MainWindow(QMainWindow):
                     self.entry_list.addItem(item)
                 elif entry.get('type') == 'note':
                     self.note_list.addItem(item)
+
+        # Populate tag filter with current tags
+        self._populate_tag_filter()
+
         self._filter_lists()
 
     def _filter_lists(self):
+        # Get filter mode
+        filter_mode = self.filter_combo.currentIndex() if hasattr(self, 'filter_combo') else 0
+        # 0 = All Entries, 1 = Pinned Only, 2 = Unpinned Only
+
+        # Get tag filter
+        selected_tag = None
+        if hasattr(self, 'tag_filter_combo'):
+            tag_text = self.tag_filter_combo.currentText()
+            if tag_text != "All Tags":
+                selected_tag = tag_text
+
+        # Filter passwords
         password_filter = self.search_passwords.text().lower()
         for i in range(self.entry_list.count()):
             item = self.entry_list.item(i)
-            item.setHidden(password_filter not in item.text().lower())
-            
+            entry_id = item.data(Qt.UserRole)
+            entry = self._find_entry(entry_id)
+
+            # Check text filter
+            text_match = password_filter in item.text().lower()
+
+            # Check pinned filter
+            pinned_match = True
+            if entry and filter_mode == 1:  # Pinned Only
+                pinned_match = entry.get('pinned', False)
+            elif entry and filter_mode == 2:  # Unpinned Only
+                pinned_match = not entry.get('pinned', False)
+
+            # Check tag filter
+            tag_match = True
+            if entry and selected_tag:
+                entry_tags = entry.get('tags', [])
+                tag_match = selected_tag in entry_tags
+
+            item.setHidden(not (text_match and pinned_match and tag_match))
+
+        # Filter notes
         note_filter = self.search_notes.text().lower()
         for i in range(self.note_list.count()):
             item = self.note_list.item(i)
@@ -742,6 +849,27 @@ class MainWindow(QMainWindow):
                 all_tags.update(tags)
 
         return sorted(list(all_tags))
+
+    def _populate_tag_filter(self):
+        """Populate the tag filter dropdown with all available tags."""
+        if not hasattr(self, 'tag_filter_combo'):
+            return
+
+        # Save current selection
+        current_tag = self.tag_filter_combo.currentText()
+
+        # Clear and repopulate
+        self.tag_filter_combo.clear()
+        self.tag_filter_combo.addItem("All Tags")
+
+        all_tags = self._get_all_tags()
+        for tag in all_tags:
+            self.tag_filter_combo.addItem(tag)
+
+        # Restore selection if it still exists
+        index = self.tag_filter_combo.findText(current_tag)
+        if index >= 0:
+            self.tag_filter_combo.setCurrentIndex(index)
     
     def _add_password_entry(self):
         all_tags = self._get_all_tags()
