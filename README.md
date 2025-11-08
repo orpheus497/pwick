@@ -1,10 +1,10 @@
 # pwick 🛡️
-**Version 2.1.0** - _A simple, secure, and 100% local password manager._
+**Version 2.2.0** - _A simple, secure, and 100% local password manager._
 
 Created by orpheus497.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
@@ -25,22 +25,34 @@ Your most sensitive information—your passwords and notes—remain completely u
 
 ### Security
 *   **Encryption:** AES-256-GCM authenticated encryption with Argon2id key derivation.
+*   **Vault Integrity:** SHA-256 hashing detects file corruption and tampering.
 *   **Upgradable KDF:** Argon2id parameters are stored in the vault, allowing for security improvements over time.
 *   **Master Password:** Never stored on disk, exists only in memory when unlocked.
 *   **Encrypted Clipboard:** Passwords encrypted with a session-unique AES-256-GCM key before copying to the system clipboard to prevent snooping.
 *   **Secure Clipboard History:** Clipboard history stores encrypted passwords, not plaintext.
 *   **Auto-Clear Clipboard:** Clipboard is automatically cleared after 30 seconds.
 *   **Auto-Lock:** Vault automatically locks after a configurable period of inactivity.
+*   **Password Expiration:** Track password age with configurable expiration warnings.
+*   **Password History:** Keep last N passwords per entry to prevent reuse.
+*   **Security Audit:** Detect duplicate and weak passwords across entries.
+*   **Automatic Backups:** Timestamped backups with configurable retention.
 *   **Import/Export:** Encrypted backup functionality for vault transfer.
 
 ### Interface
 *   **Cross-Platform:** Supports Windows and Linux.
-*   **Modern UI:** Dark theme and a tabbed interface for managing passwords and notes.
-*   **Search:** Filter your passwords and notes with a real-time search bar.
+*   **Modern UI:** Choose between dark and light themes with a tabbed interface for managing passwords and notes.
+*   **Tag Management:** Organize entries with tags, featuring autocomplete and removable chips.
+*   **Pinned Entries:** Pin important entries to keep them at the top of your list.
+*   **Advanced Search:** Real-time text search combined with tag and pinned status filtering.
+*   **Flexible Sorting:** Sort entries 6 ways (A-Z, Z-A, Date Created/Modified, Newest/Oldest).
+*   **Tag Manager:** Centralized tag management with rename, merge, and delete operations.
 *   **System Tray:** Minimizes to tray, runs in the background, and restores with a double-click.
 *   **Keyboard Shortcuts:** A full set of keyboard shortcuts for quick access to all major functions.
-*   **Password Generator:** Generates strong, 20-character passwords.
-*   **CSV Import:** Import password entries from CSV files.
+*   **Password Generator:** Generates strong, customizable passwords.
+*   **Password Strength Meter:** Visual feedback using zxcvbn algorithm.
+*   **CSV Import/Export:** Import and export password entries from/to CSV files.
+*   **Comprehensive Settings:** 7-tab settings dialog for fine-grained control.
+*   **Application Logging:** Configurable logging with sensitive data sanitization.
 
 ---
 
@@ -123,9 +135,15 @@ To remove the local pwick environment (virtual environment and launcher scripts)
 ### Daily Use
 *   Unlock vault with Master Password.
 *   Use the "Passwords" and "Notes" tabs to manage your entries.
-*   Use the search bar to quickly find what you need.
+*   **Search & Filter:** Use the search bar combined with tag and pinned filters to quickly find entries.
+*   **Sorting:** Choose from 6 sorting modes to organize your entries (A-Z, Z-A, by date, etc.).
+*   **Tags:** Add tags to entries for better organization; use the Tag Manager (Tools menu) for bulk operations.
+*   **Pin Entries:** Mark frequently used entries as pinned to keep them at the top.
 *   **Copy passwords:** Click "Copy Password" or press `Ctrl+C` (auto-clears after 30 seconds).
 *   **Clipboard History:** View last 30 copies, double-click to reuse.
+*   **Password Age:** See how old passwords are and receive expiration warnings.
+*   **Security Audit:** Run periodic security audits (Tools menu) to find weak or duplicate passwords.
+*   **Settings:** Configure all features via the comprehensive Settings dialog (Tools menu).
 *   **System Tray:** Close the window to minimize to tray; double-click the tray icon to restore.
 *   Lock the vault when idle, or let the auto-lock feature do it for you.
 
