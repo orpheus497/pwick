@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QLineEdit, QTextEdit, QPushButton,
-    QHBoxLayout, QCheckBox, QMessageBox, QLabel, QCompleter, QWidget, QFlowLayout
+    QHBoxLayout, QCheckBox, QMessageBox, QLabel, QCompleter, QWidget
 )
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
@@ -84,17 +84,20 @@ class EntryDialog(QDialog):
 
         # Title
         self.title_input = QLineEdit()
+        self.title_input.setMaxLength(256)  # Security: prevent memory exhaustion
         self.title_input.setText(self.entry_data.get('title', ''))
         form.addRow("Title:", self.title_input)
 
         # Username
         self.username_input = QLineEdit()
+        self.username_input.setMaxLength(256)  # Security: prevent memory exhaustion
         self.username_input.setText(self.entry_data.get('username', ''))
         form.addRow("Username:", self.username_input)
 
         # Password with show/generate
         password_layout = QHBoxLayout()
         self.password_input = QLineEdit()
+        self.password_input.setMaxLength(1024)  # Security: prevent memory exhaustion (allows long passphrases)
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setText(self.entry_data.get('password', ''))
         password_layout.addWidget(self.password_input)
@@ -124,6 +127,7 @@ class EntryDialog(QDialog):
         # Tag input with autocomplete
         tag_input_layout = QHBoxLayout()
         self.tag_input = QLineEdit()
+        self.tag_input.setMaxLength(50)  # Security: prevent memory exhaustion
         self.tag_input.setPlaceholderText("Add tag...")
         self.tag_input.returnPressed.connect(self._add_tag)
 
@@ -159,11 +163,27 @@ class EntryDialog(QDialog):
         self.pin_checkbox.setChecked(self.entry_data.get('pinned', False))
         form.addRow("", self.pin_checkbox)
 
-        # Notes
+        # Notes with character counter
+        notes_container = QWidget()
+        notes_layout = QVBoxLayout()
+        notes_layout.setContentsMargins(0, 0, 0, 0)
+
         self.notes_input = QTextEdit()
         self.notes_input.setText(self.entry_data.get('notes', ''))
         self.notes_input.setMaximumHeight(100)
-        form.addRow("Notes:", self.notes_input)
+        self.notes_input.textChanged.connect(self._update_notes_counter)
+        notes_layout.addWidget(self.notes_input)
+
+        # Character counter
+        self.notes_counter = QLabel()
+        self.notes_counter.setStyleSheet("color: #888888; font-size: 10px;")
+        notes_layout.addWidget(self.notes_counter)
+
+        notes_container.setLayout(notes_layout)
+        form.addRow("Notes:", notes_container)
+
+        # Initialize counter
+        self._update_notes_counter()
 
         layout.addLayout(form)
 
@@ -241,6 +261,19 @@ class EntryDialog(QDialog):
     def _add_tag(self):
         """Add a tag from the input field."""
         tag = self.tag_input.text().strip()
+
+        # Security: validate tag length (already enforced by setMaxLength, but double-check)
+        if len(tag) > 50:
+            QMessageBox.warning(self, "Tag Too Long",
+                              "Tags must be 50 characters or less.")
+            return
+
+        # Security: validate tag count
+        if len(self.current_tags) >= 50:
+            QMessageBox.warning(self, "Too Many Tags",
+                              "Maximum 50 tags per entry.")
+            return
+
         if tag and tag not in self.current_tags:
             self.current_tags.append(tag)
             self._refresh_tag_display()
@@ -271,6 +304,31 @@ class EntryDialog(QDialog):
         # Add stretch to left-align chips
         self.tags_display_layout.addStretch()
 
+    def _update_notes_counter(self):
+        """Update the notes character counter."""
+        current_length = len(self.notes_input.toPlainText())
+        max_length = 10000
+
+        # Security: enforce maximum notes length
+        if current_length > max_length:
+            # Truncate to max length
+            cursor = self.notes_input.textCursor()
+            position = cursor.position()
+            self.notes_input.setPlainText(self.notes_input.toPlainText()[:max_length])
+            # Restore cursor position (or move to end if it was beyond max)
+            cursor.setPosition(min(position, max_length))
+            self.notes_input.setTextCursor(cursor)
+            current_length = max_length
+
+        # Update counter text with color coding
+        self.notes_counter.setText(f"{current_length:,} / {max_length:,} characters")
+        if current_length > max_length * 0.9:
+            self.notes_counter.setStyleSheet("color: #ff6b6b; font-size: 10px;")  # Red when near limit
+        elif current_length > max_length * 0.75:
+            self.notes_counter.setStyleSheet("color: #ffa500; font-size: 10px;")  # Orange
+        else:
+            self.notes_counter.setStyleSheet("color: #888888; font-size: 10px;")  # Gray
+
     def _on_save(self):
         title = self.title_input.text().strip()
         username = self.username_input.text().strip()
@@ -278,8 +336,42 @@ class EntryDialog(QDialog):
         notes = self.notes_input.toPlainText().strip()
         pinned = self.pin_checkbox.isChecked()
 
+        # Validation: title required
         if not title:
-            QMessageBox.warning(self, "Error", "Title is required.")
+            QMessageBox.warning(self, "Validation Error", "Title is required.")
+            return
+
+        # Security: validate lengths (belt-and-suspenders approach)
+        if len(title) > 256:
+            QMessageBox.warning(self, "Validation Error",
+                              "Title is too long (maximum 256 characters).")
+            return
+
+        if len(username) > 256:
+            QMessageBox.warning(self, "Validation Error",
+                              "Username is too long (maximum 256 characters).")
+            return
+
+        if len(password) > 1024:
+            QMessageBox.warning(self, "Validation Error",
+                              "Password is too long (maximum 1024 characters).")
+            return
+
+        if len(notes) > 10000:
+            QMessageBox.warning(self, "Validation Error",
+                              "Notes are too long (maximum 10,000 characters).")
+            return
+
+        # Security: validate tags
+        for tag in self.current_tags:
+            if len(tag) > 50:
+                QMessageBox.warning(self, "Validation Error",
+                                  f"Tag '{tag[:20]}...' is too long (maximum 50 characters).")
+                return
+
+        if len(self.current_tags) > 50:
+            QMessageBox.warning(self, "Validation Error",
+                              "Too many tags (maximum 50 tags per entry).")
             return
 
         self.result_data = {
