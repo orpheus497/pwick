@@ -13,18 +13,27 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QListWidget, QListWidgetItem, QMessageBox, QFileDialog,
-    QGroupBox, QFormLayout, QSpinBox, QCheckBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QGroupBox,
+    QFormLayout,
 )
 from PySide6.QtCore import Qt
 
 from ...backup import (
-    list_backups, create_backup, cleanup_old_backups,
-    restore_backup, get_backup_size
+    list_backups,
+    create_backup,
+    cleanup_old_backups,
+    restore_backup,
+    get_backup_size,
 )
 
 
@@ -144,7 +153,7 @@ class BackupManagerDialog(QDialog):
         """Refresh the list of available backups."""
         self.backup_list.clear()
 
-        backup_location = self.settings.get('auto_backup_location', '')
+        backup_location = self.settings.get("auto_backup_location", "")
         backup_dir = backup_location if backup_location else None
 
         self.backups = list_backups(self.vault_path, backup_dir)
@@ -157,7 +166,7 @@ class BackupManagerDialog(QDialog):
 
         for backup_path, backup_date in self.backups:
             # Format the display text
-            date_str = backup_date.strftime('%Y-%m-%d %H:%M:%S')
+            date_str = backup_date.strftime("%Y-%m-%d %H:%M:%S")
             filename = Path(backup_path).name
 
             # Get file size
@@ -168,7 +177,7 @@ class BackupManagerDialog(QDialog):
                     size_str = f"{size_kb:.1f} KB"
                 else:
                     size_str = f"{size_kb / 1024:.1f} MB"
-            except:
+            except (OSError, FileNotFoundError):
                 size_str = "Unknown"
 
             display_text = f"{date_str} - {filename} ({size_str})"
@@ -182,7 +191,9 @@ class BackupManagerDialog(QDialog):
         if total_size > 0:
             size_mb = total_size / (1024 * 1024)
             self.backup_list.addItem(
-                QListWidgetItem(f"\n📊 Total backup size: {size_mb:.2f} MB ({len(self.backups)} backups)")
+                QListWidgetItem(
+                    f"\n📊 Total backup size: {size_mb:.2f} MB ({len(self.backups)} backups)"
+                )
             )
 
     def _on_selection_changed(self):
@@ -200,7 +211,7 @@ class BackupManagerDialog(QDialog):
 
             try:
                 mtime = datetime.fromtimestamp(path_obj.stat().st_mtime)
-                self.detail_date.setText(mtime.strftime('%Y-%m-%d %H:%M:%S'))
+                self.detail_date.setText(mtime.strftime("%Y-%m-%d %H:%M:%S"))
 
                 size_bytes = path_obj.stat().st_size
                 size_kb = size_bytes / 1024
@@ -229,7 +240,7 @@ class BackupManagerDialog(QDialog):
 
     def _create_backup(self):
         """Create a new manual backup."""
-        backup_location = self.settings.get('auto_backup_location', '')
+        backup_location = self.settings.get("auto_backup_location", "")
         backup_dir = backup_location if backup_location else None
 
         reply = QMessageBox.question(
@@ -239,7 +250,7 @@ class BackupManagerDialog(QDialog):
             f"Vault: {Path(self.vault_path).name}\n"
             f"Location: {backup_dir if backup_dir else 'Same directory as vault'}",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
+            QMessageBox.Yes,
         )
 
         if reply == QMessageBox.Yes:
@@ -249,14 +260,14 @@ class BackupManagerDialog(QDialog):
                 QMessageBox.information(
                     self,
                     "Backup Created",
-                    f"Backup created successfully:\n\n{backup_path}"
+                    f"Backup created successfully:\n\n{backup_path}",
                 )
                 self._refresh_backup_list()
             else:
                 QMessageBox.critical(
                     self,
                     "Backup Failed",
-                    "Failed to create backup. Check the logs for details."
+                    "Failed to create backup. Check the logs for details.",
                 )
 
     def _restore_backup(self):
@@ -276,7 +287,7 @@ class BackupManagerDialog(QDialog):
             f"Created: {self.detail_date.text()}\n\n"
             "Do you want to create a backup of the current vault before restoring?",
             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel,
-            QMessageBox.Yes
+            QMessageBox.Yes,
         )
 
         if reply == QMessageBox.Cancel:
@@ -289,7 +300,7 @@ class BackupManagerDialog(QDialog):
                 QMessageBox.critical(
                     self,
                     "Backup Failed",
-                    "Failed to create backup of current vault. Restore cancelled."
+                    "Failed to create backup of current vault. Restore cancelled.",
                 )
                 return
 
@@ -302,7 +313,7 @@ class BackupManagerDialog(QDialog):
             f"With:\n{backup_path}\n\n"
             "Continue with restoration?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.No,
         )
 
         if final_confirm == QMessageBox.Yes:
@@ -313,14 +324,14 @@ class BackupManagerDialog(QDialog):
                     self,
                     "Restore Complete",
                     "Vault restored successfully!\n\n"
-                    "You may need to re-open the vault to see the changes."
+                    "You may need to re-open the vault to see the changes.",
                 )
                 self.accept()  # Close the dialog
             else:
                 QMessageBox.critical(
                     self,
                     "Restore Failed",
-                    "Failed to restore from backup. Your original vault is unchanged."
+                    "Failed to restore from backup. Your original vault is unchanged.",
                 )
 
     def _delete_backup(self):
@@ -339,29 +350,25 @@ class BackupManagerDialog(QDialog):
             f"Created: {self.detail_date.text()}\n\n"
             "This action cannot be undone.",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.No,
         )
 
         if reply == QMessageBox.Yes:
             try:
                 Path(backup_path).unlink()
                 QMessageBox.information(
-                    self,
-                    "Backup Deleted",
-                    "Backup deleted successfully."
+                    self, "Backup Deleted", "Backup deleted successfully."
                 )
                 self._refresh_backup_list()
             except Exception as e:
                 QMessageBox.critical(
-                    self,
-                    "Delete Failed",
-                    f"Failed to delete backup:\n\n{e}"
+                    self, "Delete Failed", f"Failed to delete backup:\n\n{e}"
                 )
 
     def _cleanup_backups(self):
         """Cleanup old backups based on retention settings."""
-        keep_count = self.settings.get('auto_backup_keep_count', 5)
-        backup_location = self.settings.get('auto_backup_location', '')
+        keep_count = self.settings.get("auto_backup_keep_count", 5)
+        backup_location = self.settings.get("auto_backup_location", "")
         backup_dir = backup_location if backup_location else None
 
         current_count = len(self.backups)
@@ -371,7 +378,7 @@ class BackupManagerDialog(QDialog):
                 self,
                 "No Cleanup Needed",
                 f"You have {current_count} backup(s), which is within the retention limit of {keep_count}.\n\n"
-                "No cleanup needed."
+                "No cleanup needed.",
             )
             return
 
@@ -385,15 +392,13 @@ class BackupManagerDialog(QDialog):
             f"Will delete: {will_delete} oldest backup(s)\n\n"
             "Continue with cleanup?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
+            QMessageBox.Yes,
         )
 
         if reply == QMessageBox.Yes:
             deleted = cleanup_old_backups(self.vault_path, backup_dir, keep_count)
 
             QMessageBox.information(
-                self,
-                "Cleanup Complete",
-                f"Deleted {deleted} old backup(s)."
+                self, "Cleanup Complete", f"Deleted {deleted} old backup(s)."
             )
             self._refresh_backup_list()

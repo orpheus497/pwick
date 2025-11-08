@@ -9,11 +9,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QComboBox, QFileDialog, QMessageBox, QGroupBox, QTextEdit,
-    QProgressBar
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QComboBox,
+    QFileDialog,
+    QMessageBox,
+    QGroupBox,
+    QTextEdit,
+    QProgressBar,
 )
-from PySide6.QtCore import Qt
 
 from ...importers import (
     detect_csv_format,
@@ -22,7 +29,7 @@ from ...importers import (
     import_from_bitwarden_json,
     import_from_bitwarden_csv,
     import_from_lastpass_csv,
-    import_from_onepassword_csv
+    import_from_onepassword_csv,
 )
 from ... import vault
 
@@ -81,15 +88,17 @@ class ImportWizardDialog(QDialog):
         format_layout.addWidget(info_label)
 
         self.format_combo = QComboBox()
-        self.format_combo.addItems([
-            "Auto-detect",
-            "KeePass CSV",
-            "Bitwarden JSON",
-            "Bitwarden CSV",
-            "LastPass CSV",
-            "1Password CSV",
-            "Generic CSV"
-        ])
+        self.format_combo.addItems(
+            [
+                "Auto-detect",
+                "KeePass CSV",
+                "Bitwarden JSON",
+                "Bitwarden CSV",
+                "LastPass CSV",
+                "1Password CSV",
+                "Generic CSV",
+            ]
+        )
         format_layout.addWidget(self.format_combo)
 
         format_group.setLayout(format_layout)
@@ -161,7 +170,7 @@ class ImportWizardDialog(QDialog):
             self,
             "Select Import File",
             "",
-            "All Supported Files (*.csv *.json);;CSV Files (*.csv);;JSON Files (*.json);;All Files (*)"
+            "All Supported Files (*.csv *.json);;CSV Files (*.csv);;JSON Files (*.json);;All Files (*)",
         )
 
         if file_path:
@@ -175,11 +184,11 @@ class ImportWizardDialog(QDialog):
                 detected_format = detect_csv_format(file_path)
                 if detected_format:
                     format_map = {
-                        'keepass': 'KeePass CSV',
-                        'bitwarden': 'Bitwarden CSV',
-                        'lastpass': 'LastPass CSV',
-                        '1password': '1Password CSV',
-                        'generic': 'Generic CSV'
+                        "keepass": "KeePass CSV",
+                        "bitwarden": "Bitwarden CSV",
+                        "lastpass": "LastPass CSV",
+                        "1password": "1Password CSV",
+                        "generic": "Generic CSV",
                     }
                     if detected_format in format_map:
                         self.format_combo.setCurrentText(format_map[detected_format])
@@ -205,7 +214,7 @@ class ImportWizardDialog(QDialog):
             "Existing passwords will not be affected. New entries will be added.\n\n"
             "Continue with import?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
+            QMessageBox.Yes,
         )
 
         if reply != QMessageBox.Yes:
@@ -237,7 +246,7 @@ class ImportWizardDialog(QDialog):
 
             # Show results
             if result.success_count > 0:
-                message = f"Import complete!\n\n"
+                message = "Import complete!\n\n"
                 message += f"Successfully imported: {result.success_count} entries\n"
 
                 if result.error_count > 0:
@@ -264,7 +273,5 @@ class ImportWizardDialog(QDialog):
             self.import_btn.setEnabled(True)
 
             QMessageBox.critical(
-                self,
-                "Import Error",
-                f"An error occurred during import:\n\n{str(e)}"
+                self, "Import Error", f"An error occurred during import:\n\n{str(e)}"
             )

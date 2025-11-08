@@ -29,17 +29,23 @@ def import_from_onepassword_csv(vault_obj: vault.Vault, file_path: str) -> Impor
     result = ImportResult()
 
     try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
+        with open(file_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
 
             for row_num, row in enumerate(reader, start=2):
                 try:
-                    title = row.get('Title') or row.get('title') or ''
-                    username = row.get('Username') or row.get('username') or ''
-                    password = row.get('Password') or row.get('password') or ''
-                    website = row.get('Website') or row.get('website') or row.get('URL') or row.get('url') or ''
-                    notes = row.get('Notes') or row.get('notes') or ''
-                    item_type = row.get('Type') or row.get('type') or ''
+                    title = row.get("Title") or row.get("title") or ""
+                    username = row.get("Username") or row.get("username") or ""
+                    password = row.get("Password") or row.get("password") or ""
+                    website = (
+                        row.get("Website")
+                        or row.get("website")
+                        or row.get("URL")
+                        or row.get("url")
+                        or ""
+                    )
+                    notes = row.get("Notes") or row.get("notes") or ""
+                    item_type = row.get("Type") or row.get("type") or ""
 
                     if not title:
                         result.add_error(row_num, "Missing title")
@@ -60,9 +66,9 @@ def import_from_onepassword_csv(vault_obj: vault.Vault, file_path: str) -> Impor
                         title=title,
                         username=username,
                         password=password,
-                        notes='\n\n'.join(full_notes),
+                        notes="\n\n".join(full_notes),
                         tags=tags,
-                        entry_type='password'
+                        entry_type="password",
                     )
 
                     result.add_success(entry_id)

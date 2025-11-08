@@ -7,13 +7,16 @@ Press Ctrl+K to open and quickly access any function.
 
 from __future__ import annotations
 
-from typing import Callable, List, Tuple, Optional
+from typing import Callable, List, Tuple
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLineEdit, QListWidget, QListWidgetItem
+    QDialog,
+    QVBoxLayout,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
 )
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QKeySequence
 
 
 class CommandPaletteDialog(QDialog):
@@ -200,96 +203,77 @@ def create_command_palette(main_window) -> CommandPaletteDialog:
     palette.add_command(
         "Create New Vault",
         "Create a new encrypted vault file",
-        main_window._show_welcome
+        main_window._show_welcome,
     )
+    palette.add_command("Lock Vault", "Lock the current vault", main_window._lock_vault)
     palette.add_command(
-        "Lock Vault",
-        "Lock the current vault",
-        main_window._lock_vault
-    )
-    palette.add_command(
-        "Export Vault",
-        "Export vault to encrypted file",
-        main_window._export_vault
+        "Export Vault", "Export vault to encrypted file", main_window._export_vault
     )
 
     # Password operations
     palette.add_command(
-        "Add Password",
-        "Add a new password entry",
-        main_window._add_password_entry
+        "Add Password", "Add a new password entry", main_window._add_password_entry
     )
     palette.add_command(
         "Edit Password",
         "Edit the selected password entry",
-        main_window._edit_password_entry
+        main_window._edit_password_entry,
     )
     palette.add_command(
         "Delete Password",
         "Delete the selected password entry",
-        main_window._delete_password_entry
+        main_window._delete_password_entry,
     )
     palette.add_command(
         "Copy Password",
         "Copy selected password to clipboard",
-        main_window._copy_password
+        main_window._copy_password,
     )
 
     # Note operations
+    palette.add_command("Add Note", "Add a new note entry", main_window._add_note_entry)
     palette.add_command(
-        "Add Note",
-        "Add a new note entry",
-        main_window._add_note_entry
+        "Save Note", "Save the current note", main_window._save_note_entry
     )
     palette.add_command(
-        "Save Note",
-        "Save the current note",
-        main_window._save_note_entry
-    )
-    palette.add_command(
-        "Delete Note",
-        "Delete the selected note entry",
-        main_window._delete_note_entry
+        "Delete Note", "Delete the selected note entry", main_window._delete_note_entry
     )
 
     # Tools
     palette.add_command(
         "Security Audit",
         "Run security audit to find weak/duplicate passwords",
-        main_window._run_security_audit
+        main_window._run_security_audit,
     )
     palette.add_command(
         "Tag Manager",
         "Manage tags (rename, merge, delete)",
-        main_window._open_tag_manager
+        main_window._open_tag_manager,
     )
+    palette.add_command("Settings", "Open settings dialog", main_window._open_settings)
     palette.add_command(
-        "Settings",
-        "Open settings dialog",
-        main_window._open_settings
-    )
-    palette.add_command(
-        "Clear Clipboard",
-        "Clear clipboard immediately",
-        main_window._clear_clipboard
+        "Clear Clipboard", "Clear clipboard immediately", main_window._clear_clipboard
     )
 
     # View operations
     palette.add_command(
         "Show Passwords Tab",
         "Switch to passwords view",
-        lambda: main_window.tabs.setCurrentIndex(0)
+        lambda: main_window.tabs.setCurrentIndex(0),
     )
     palette.add_command(
         "Show Notes Tab",
         "Switch to notes view",
-        lambda: main_window.tabs.setCurrentIndex(1)
+        lambda: main_window.tabs.setCurrentIndex(1),
     )
     palette.add_command(
         "Focus Search",
         "Focus the search box",
-        lambda: (main_window.search_passwords.setFocus() if main_window.tabs.currentIndex() == 0
-                else main_window.search_notes.setFocus())
+        lambda: (
+            main_window.search_passwords.setFocus()
+            if main_window.tabs.currentIndex() == 0
+            else main_window.search_notes.setFocus()
+        ),
     )
 
     return palette

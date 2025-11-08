@@ -7,10 +7,8 @@ sensitive data sanitization to prevent password leakage in logs.
 
 import logging
 import logging.handlers
-import os
 import re
 from pathlib import Path
-from typing import Optional
 
 from .config import get_config_dir
 
@@ -18,9 +16,12 @@ from .config import get_config_dir
 # Sensitive data patterns to sanitize from logs
 SENSITIVE_PATTERNS = [
     (re.compile(r'"password":\s*"[^"]*"'), '"password": "***REDACTED***"'),
-    (re.compile(r'"master_password":\s*"[^"]*"'), '"master_password": "***REDACTED***"'),
-    (re.compile(r'password=\S+'), 'password=***REDACTED***'),
-    (re.compile(r'master_password=\S+'), 'master_password=***REDACTED***'),
+    (
+        re.compile(r'"master_password":\s*"[^"]*"'),
+        '"master_password": "***REDACTED***"',
+    ),
+    (re.compile(r"password=\S+"), "password=***REDACTED***"),
+    (re.compile(r"master_password=\S+"), "master_password=***REDACTED***"),
 ]
 
 
@@ -63,7 +64,7 @@ def get_log_path() -> Path:
         Path object pointing to pwick.log in the config directory
     """
     config_dir = get_config_dir()
-    return config_dir / 'pwick.log'
+    return config_dir / "pwick.log"
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -83,8 +84,9 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
-def setup_logging(level: str = "INFO", max_bytes: int = 10 * 1024 * 1024,
-                  backup_count: int = 3) -> None:
+def setup_logging(
+    level: str = "INFO", max_bytes: int = 10 * 1024 * 1024, backup_count: int = 3
+) -> None:
     """
     Configure logging for the application.
 
@@ -118,17 +120,14 @@ def setup_logging(level: str = "INFO", max_bytes: int = 10 * 1024 * 1024,
 
     # Create rotating file handler
     file_handler = logging.handlers.RotatingFileHandler(
-        log_path,
-        maxBytes=max_bytes,
-        backupCount=backup_count,
-        encoding='utf-8'
+        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
     )
     file_handler.setLevel(numeric_level)
 
     # Create formatter
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     file_handler.setFormatter(formatter)
 

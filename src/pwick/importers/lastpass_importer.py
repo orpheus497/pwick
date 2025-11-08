@@ -29,17 +29,17 @@ def import_from_lastpass_csv(vault_obj: vault.Vault, file_path: str) -> ImportRe
     result = ImportResult()
 
     try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
+        with open(file_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
 
             for row_num, row in enumerate(reader, start=2):
                 try:
-                    name = row.get('name', '')
-                    username = row.get('username', '')
-                    password = row.get('password', '')
-                    url = row.get('url', '')
-                    extra = row.get('extra', '')
-                    grouping = row.get('grouping', '')
+                    name = row.get("name", "")
+                    username = row.get("username", "")
+                    password = row.get("password", "")
+                    url = row.get("url", "")
+                    extra = row.get("extra", "")
+                    grouping = row.get("grouping", "")
 
                     if not name:
                         result.add_error(row_num, "Missing name")
@@ -60,9 +60,9 @@ def import_from_lastpass_csv(vault_obj: vault.Vault, file_path: str) -> ImportRe
                         title=name,
                         username=username,
                         password=password,
-                        notes='\n\n'.join(full_notes),
+                        notes="\n\n".join(full_notes),
                         tags=tags,
-                        entry_type='password'
+                        entry_type="password",
                     )
 
                     result.add_success(entry_id)

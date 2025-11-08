@@ -14,11 +14,11 @@ from .password_history_dialog import PasswordHistoryDialog
 from .password_strength_widget import PasswordStrengthWidget
 
 __all__ = [
-    'WelcomeDialog',
-    'MasterPasswordDialog',
-    'EntryDialog',
-    'SettingsDialog',
-    'SecurityAuditDialog',
-    'PasswordHistoryDialog',
-    'PasswordStrengthWidget',
+    "WelcomeDialog",
+    "MasterPasswordDialog",
+    "EntryDialog",
+    "SettingsDialog",
+    "SecurityAuditDialog",
+    "PasswordHistoryDialog",
+    "PasswordStrengthWidget",
 ]

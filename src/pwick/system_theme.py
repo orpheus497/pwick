@@ -72,7 +72,7 @@ def _detect_macos_theme() -> ThemeMode:
             ["defaults", "read", "-g", "AppleInterfaceStyle"],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=2,
         )
 
         # If the key exists and contains "Dark", system is in dark mode
@@ -128,7 +128,7 @@ def _detect_linux_gsettings() -> ThemeMode:
             ["gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=2,
         )
 
         if result.returncode == 0:
@@ -147,7 +147,7 @@ def _detect_linux_gsettings() -> ThemeMode:
             ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=2,
         )
 
         if result.returncode == 0:
@@ -175,19 +175,19 @@ def _detect_linux_gtk_settings() -> ThemeMode:
             content = gtk_settings.read_text()
 
             # Look for gtk-theme-name or gtk-application-prefer-dark-theme
-            for line in content.split('\n'):
+            for line in content.split("\n"):
                 line = line.strip().lower()
 
-                if line.startswith('gtk-application-prefer-dark-theme'):
-                    if 'true' in line or '1' in line:
+                if line.startswith("gtk-application-prefer-dark-theme"):
+                    if "true" in line or "1" in line:
                         return "dark"
                     else:
                         return "light"
 
-                if line.startswith('gtk-theme-name'):
-                    if 'dark' in line:
+                if line.startswith("gtk-theme-name"):
+                    if "dark" in line:
                         return "dark"
-                    elif '=' in line:  # Theme is set
+                    elif "=" in line:  # Theme is set
                         return "light"
 
     except Exception:
@@ -204,7 +204,7 @@ def _detect_linux_kde_theme() -> ThemeMode:
             ["kreadconfig5", "--group", "General", "--key", "ColorScheme"],
             capture_output=True,
             text=True,
-            timeout=2
+            timeout=2,
         )
 
         if result.returncode == 0:

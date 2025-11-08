@@ -7,4 +7,4 @@ dialogs and widgets for the PySide6-based desktop interface.
 
 from .main_window import MainWindow, run
 
-__all__ = ['MainWindow', 'run']
+__all__ = ["MainWindow", "run"]

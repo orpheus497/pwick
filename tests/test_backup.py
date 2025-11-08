@@ -11,11 +11,10 @@ import shutil
 import os
 import sys
 import time
-from pathlib import Path
 from datetime import datetime, timedelta
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pwick import vault, backup
 
@@ -26,12 +25,12 @@ class TestBackupModule(unittest.TestCase):
     def setUp(self):
         """Create temporary directory and test vault."""
         self.temp_dir = tempfile.mkdtemp()
-        self.vault_path = os.path.join(self.temp_dir, 'test.vault')
-        self.master_password = 'TestPassword123!'
+        self.vault_path = os.path.join(self.temp_dir, "test.vault")
+        self.master_password = "TestPassword123!"
 
         # Create a test vault
         self.vault_data = vault.create_vault(self.vault_path, self.master_password)
-        vault.add_entry(self.vault_data, 'Test Site', 'user', 'pass', 'notes')
+        vault.add_entry(self.vault_data, "Test Site", "user", "pass", "notes")
         vault.save_vault(self.vault_path, self.vault_data, self.master_password)
 
     def tearDown(self):
@@ -44,13 +43,13 @@ class TestBackupModule(unittest.TestCase):
         filename = backup.get_backup_filename(self.vault_path)
 
         self.assertIsInstance(filename, str)
-        self.assertTrue(filename.startswith('test_'))
-        self.assertTrue(filename.endswith('.vault'))
-        self.assertIn('_', filename)  # Should contain timestamp separators
+        self.assertTrue(filename.startswith("test_"))
+        self.assertTrue(filename.endswith(".vault"))
+        self.assertIn("_", filename)  # Should contain timestamp separators
 
         # Check that timestamp is present (basic format check)
         # Format: test_YYYY-MM-DD_HH-MM-SS.vault
-        parts = filename.split('_')
+        parts = filename.split("_")
         self.assertEqual(len(parts), 4)  # test, YYYY-MM-DD, HH-MM-SS.vault
 
     def test_create_backup(self):
@@ -62,12 +61,12 @@ class TestBackupModule(unittest.TestCase):
 
         # Verify backup is a valid vault file
         loaded = vault.load_vault(backup_path, self.master_password)
-        self.assertEqual(len(loaded['entries']), 1)
-        self.assertEqual(loaded['entries'][0]['title'], 'Test Site')
+        self.assertEqual(len(loaded["entries"]), 1)
+        self.assertEqual(loaded["entries"][0]["title"], "Test Site")
 
     def test_create_backup_custom_directory(self):
         """Test creating backup in custom directory."""
-        backup_dir = os.path.join(self.temp_dir, 'backups')
+        backup_dir = os.path.join(self.temp_dir, "backups")
 
         backup_path = backup.create_backup(self.vault_path, backup_dir)
 
@@ -78,7 +77,7 @@ class TestBackupModule(unittest.TestCase):
 
     def test_create_backup_nonexistent_vault(self):
         """Test creating backup of nonexistent vault returns None."""
-        nonexistent_path = os.path.join(self.temp_dir, 'nonexistent.vault')
+        nonexistent_path = os.path.join(self.temp_dir, "nonexistent.vault")
 
         backup_path = backup.create_backup(nonexistent_path)
 
@@ -87,11 +86,11 @@ class TestBackupModule(unittest.TestCase):
     def test_list_backups(self):
         """Test listing backup files."""
         # Create multiple backups (with small delays to ensure different timestamps)
-        backup1 = backup.create_backup(self.vault_path)
+        backup.create_backup(self.vault_path)
         time.sleep(0.1)
-        backup2 = backup.create_backup(self.vault_path)
+        backup.create_backup(self.vault_path)
         time.sleep(0.1)
-        backup3 = backup.create_backup(self.vault_path)
+        backup.create_backup(self.vault_path)
 
         # List backups
         backups = backup.list_backups(self.vault_path)
@@ -109,13 +108,14 @@ class TestBackupModule(unittest.TestCase):
 
         # Verify backups are sorted by time (newest first)
         times = [backup_time for _, backup_time in backups]
-        self.assertEqual(times, sorted(times, reverse=True),
-                        "Backups should be sorted newest first")
+        self.assertEqual(
+            times, sorted(times, reverse=True), "Backups should be sorted newest first"
+        )
 
     def test_list_backups_empty(self):
         """Test listing backups when none exist."""
         # Create a new vault with no backups
-        new_vault_path = os.path.join(self.temp_dir, 'new_vault.vault')
+        new_vault_path = os.path.join(self.temp_dir, "new_vault.vault")
         vault.create_vault(new_vault_path, self.master_password)
 
         backups = backup.list_backups(new_vault_path)
@@ -124,7 +124,7 @@ class TestBackupModule(unittest.TestCase):
 
     def test_list_backups_custom_directory(self):
         """Test listing backups from custom directory."""
-        backup_dir = os.path.join(self.temp_dir, 'backups')
+        backup_dir = os.path.join(self.temp_dir, "backups")
 
         # Create backups in custom directory
         backup.create_backup(self.vault_path, backup_dir)
@@ -186,15 +186,15 @@ class TestBackupModule(unittest.TestCase):
 
         # Modify original vault
         vault_data = vault.load_vault(self.vault_path, self.master_password)
-        vault.add_entry(vault_data, 'New Entry', 'newuser', 'newpass', 'newnotes')
+        vault.add_entry(vault_data, "New Entry", "newuser", "newpass", "newnotes")
         vault.save_vault(self.vault_path, vault_data, self.master_password)
 
         # Verify original has 2 entries
         modified_vault = vault.load_vault(self.vault_path, self.master_password)
-        self.assertEqual(len(modified_vault['entries']), 2)
+        self.assertEqual(len(modified_vault["entries"]), 2)
 
         # Restore from backup
-        restore_path = os.path.join(self.temp_dir, 'restored.vault')
+        restore_path = os.path.join(self.temp_dir, "restored.vault")
         result = backup.restore_backup(backup_path, restore_path)
 
         self.assertTrue(result, "Restore should succeed")
@@ -202,13 +202,13 @@ class TestBackupModule(unittest.TestCase):
 
         # Verify restored vault has only 1 entry (original state)
         restored_vault = vault.load_vault(restore_path, self.master_password)
-        self.assertEqual(len(restored_vault['entries']), 1)
-        self.assertEqual(restored_vault['entries'][0]['title'], 'Test Site')
+        self.assertEqual(len(restored_vault["entries"]), 1)
+        self.assertEqual(restored_vault["entries"][0]["title"], "Test Site")
 
     def test_restore_backup_nonexistent(self):
         """Test restoring from nonexistent backup returns False."""
-        nonexistent_backup = os.path.join(self.temp_dir, 'nonexistent_backup.vault')
-        restore_path = os.path.join(self.temp_dir, 'restored.vault')
+        nonexistent_backup = os.path.join(self.temp_dir, "nonexistent_backup.vault")
+        restore_path = os.path.join(self.temp_dir, "restored.vault")
 
         result = backup.restore_backup(nonexistent_backup, restore_path)
 
@@ -219,9 +219,7 @@ class TestBackupModule(unittest.TestCase):
         """Test should_create_backup with 'on_change' frequency."""
         # Always returns True for on_change
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='on_change',
-            last_backup_time=datetime.now()
+            self.vault_path, frequency="on_change", last_backup_time=datetime.now()
         )
         self.assertTrue(result)
 
@@ -229,9 +227,7 @@ class TestBackupModule(unittest.TestCase):
         """Test should_create_backup when no previous backup exists."""
         # Should return True when last_backup_time is None
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='daily',
-            last_backup_time=None
+            self.vault_path, frequency="daily", last_backup_time=None
         )
         self.assertTrue(result)
 
@@ -240,18 +236,14 @@ class TestBackupModule(unittest.TestCase):
         # Recent backup (1 hour ago) - should not create
         recent_backup = datetime.now() - timedelta(hours=1)
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='daily',
-            last_backup_time=recent_backup
+            self.vault_path, frequency="daily", last_backup_time=recent_backup
         )
         self.assertFalse(result)
 
         # Old backup (2 days ago) - should create
         old_backup = datetime.now() - timedelta(days=2)
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='daily',
-            last_backup_time=old_backup
+            self.vault_path, frequency="daily", last_backup_time=old_backup
         )
         self.assertTrue(result)
 
@@ -260,18 +252,14 @@ class TestBackupModule(unittest.TestCase):
         # Recent backup (3 days ago) - should not create
         recent_backup = datetime.now() - timedelta(days=3)
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='weekly',
-            last_backup_time=recent_backup
+            self.vault_path, frequency="weekly", last_backup_time=recent_backup
         )
         self.assertFalse(result)
 
         # Old backup (8 days ago) - should create
         old_backup = datetime.now() - timedelta(days=8)
         result = backup.should_create_backup(
-            self.vault_path,
-            frequency='weekly',
-            last_backup_time=old_backup
+            self.vault_path, frequency="weekly", last_backup_time=old_backup
         )
         self.assertTrue(result)
 
@@ -293,7 +281,7 @@ class TestBackupModule(unittest.TestCase):
 
     def test_get_backup_size_no_backups(self):
         """Test getting backup size when no backups exist."""
-        new_vault_path = os.path.join(self.temp_dir, 'new_vault.vault')
+        new_vault_path = os.path.join(self.temp_dir, "new_vault.vault")
         vault.create_vault(new_vault_path, self.master_password)
 
         total_size = backup.get_backup_size(new_vault_path)
@@ -303,10 +291,10 @@ class TestBackupModule(unittest.TestCase):
     def test_auto_backup_disabled(self):
         """Test auto_backup when backup is disabled in settings."""
         test_settings = {
-            'auto_backup_enabled': False,
-            'auto_backup_location': '',
-            'auto_backup_frequency': 'weekly',
-            'auto_backup_keep_count': 5,
+            "auto_backup_enabled": False,
+            "auto_backup_location": "",
+            "auto_backup_frequency": "weekly",
+            "auto_backup_keep_count": 5,
         }
 
         backup_path = backup.auto_backup(self.vault_path, test_settings)
@@ -320,10 +308,10 @@ class TestBackupModule(unittest.TestCase):
     def test_auto_backup_enabled(self):
         """Test auto_backup when backup is enabled in settings."""
         test_settings = {
-            'auto_backup_enabled': True,
-            'auto_backup_location': '',  # Use default location
-            'auto_backup_frequency': 'on_change',
-            'auto_backup_keep_count': 5,
+            "auto_backup_enabled": True,
+            "auto_backup_location": "",  # Use default location
+            "auto_backup_frequency": "on_change",
+            "auto_backup_keep_count": 5,
         }
 
         backup_path = backup.auto_backup(self.vault_path, test_settings)
@@ -334,10 +322,10 @@ class TestBackupModule(unittest.TestCase):
     def test_auto_backup_with_rotation(self):
         """Test auto_backup performs rotation of old backups."""
         test_settings = {
-            'auto_backup_enabled': True,
-            'auto_backup_location': '',
-            'auto_backup_frequency': 'on_change',
-            'auto_backup_keep_count': 3,
+            "auto_backup_enabled": True,
+            "auto_backup_location": "",
+            "auto_backup_frequency": "on_change",
+            "auto_backup_keep_count": 3,
         }
 
         # Create 5 backups
@@ -351,13 +339,13 @@ class TestBackupModule(unittest.TestCase):
 
     def test_auto_backup_custom_location(self):
         """Test auto_backup with custom backup location."""
-        backup_dir = os.path.join(self.temp_dir, 'custom_backups')
+        backup_dir = os.path.join(self.temp_dir, "custom_backups")
 
         test_settings = {
-            'auto_backup_enabled': True,
-            'auto_backup_location': backup_dir,
-            'auto_backup_frequency': 'on_change',
-            'auto_backup_keep_count': 5,
+            "auto_backup_enabled": True,
+            "auto_backup_location": backup_dir,
+            "auto_backup_frequency": "on_change",
+            "auto_backup_keep_count": 5,
         }
 
         backup_path = backup.auto_backup(self.vault_path, test_settings)
@@ -371,5 +359,5 @@ class TestBackupModule(unittest.TestCase):
         self.assertEqual(len(backups), 1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

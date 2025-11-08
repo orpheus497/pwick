@@ -12,13 +12,29 @@ Provides UI for configuring user preferences including:
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget,
-    QPushButton, QLabel, QSpinBox, QCheckBox, QGroupBox, QFormLayout,
-    QMessageBox, QComboBox, QLineEdit, QFileDialog
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QWidget,
+    QPushButton,
+    QLabel,
+    QSpinBox,
+    QCheckBox,
+    QGroupBox,
+    QFormLayout,
+    QMessageBox,
+    QComboBox,
+    QLineEdit,
+    QFileDialog,
 )
-from PySide6.QtCore import Qt
 
-from ...config import load_settings, save_settings, validate_settings, get_default_settings
+from ...config import (
+    load_settings,
+    save_settings,
+    validate_settings,
+    get_default_settings,
+)
 
 
 class SettingsDialog(QDialog):
@@ -97,8 +113,10 @@ class SettingsDialog(QDialog):
         self.autolock_spin.setSpecialValueText("Disabled")
         autolock_layout.addRow("Lock after idle time:", self.autolock_spin)
 
-        autolock_help = QLabel("Vault will automatically lock after this many minutes of inactivity.\n"
-                               "Set to 0 to disable auto-lock.")
+        autolock_help = QLabel(
+            "Vault will automatically lock after this many minutes of inactivity.\n"
+            "Set to 0 to disable auto-lock."
+        )
         autolock_help.setWordWrap(True)
         autolock_help.setStyleSheet("color: #999; font-size: 10px;")
         autolock_layout.addRow("", autolock_help)
@@ -122,9 +140,11 @@ class SettingsDialog(QDialog):
         self.clipboard_history_spin.setSpecialValueText("Disabled")
         clipboard_layout.addRow("History size:", self.clipboard_history_spin)
 
-        clipboard_help = QLabel("Copied passwords will be automatically cleared from the system\n"
-                               "clipboard after the specified time. History stores recent copies\n"
-                               "in memory (cleared on lock).")
+        clipboard_help = QLabel(
+            "Copied passwords will be automatically cleared from the system\n"
+            "clipboard after the specified time. History stores recent copies\n"
+            "in memory (cleared on lock)."
+        )
         clipboard_help.setWordWrap(True)
         clipboard_help.setStyleSheet("color: #999; font-size: 10px;")
         clipboard_layout.addRow("", clipboard_help)
@@ -166,9 +186,11 @@ class SettingsDialog(QDialog):
         self.gen_punctuation_check = QCheckBox("Punctuation (!@#$%^&*...)")
         gen_layout.addRow("", self.gen_punctuation_check)
 
-        gen_help = QLabel("These are default settings for the password generator.\n"
-                         "At least one character set must be selected.\n"
-                         "You can override these when generating individual passwords.")
+        gen_help = QLabel(
+            "These are default settings for the password generator.\n"
+            "At least one character set must be selected.\n"
+            "You can override these when generating individual passwords."
+        )
         gen_help.setWordWrap(True)
         gen_help.setStyleSheet("color: #999; font-size: 10px;")
         gen_layout.addRow("", gen_help)
@@ -193,11 +215,15 @@ class SettingsDialog(QDialog):
         self.password_history_limit_spin.setMinimum(0)
         self.password_history_limit_spin.setMaximum(50)
         self.password_history_limit_spin.setSpecialValueText("Disabled")
-        history_layout.addRow("Keep last N passwords:", self.password_history_limit_spin)
+        history_layout.addRow(
+            "Keep last N passwords:", self.password_history_limit_spin
+        )
 
-        history_help = QLabel("Number of old passwords to keep for each entry.\n"
-                             "Set to 0 to disable password history.\n"
-                             "Useful for tracking password changes and preventing reuse.")
+        history_help = QLabel(
+            "Number of old passwords to keep for each entry.\n"
+            "Set to 0 to disable password history.\n"
+            "Useful for tracking password changes and preventing reuse."
+        )
         history_help.setWordWrap(True)
         history_help.setStyleSheet("color: #999; font-size: 10px;")
         history_layout.addRow("", history_help)
@@ -214,17 +240,23 @@ class SettingsDialog(QDialog):
         self.password_expiration_days_spin.setMaximum(3650)  # 10 years
         self.password_expiration_days_spin.setSuffix(" days")
         self.password_expiration_days_spin.setSpecialValueText("Never")
-        expiration_layout.addRow("Expire passwords after:", self.password_expiration_days_spin)
+        expiration_layout.addRow(
+            "Expire passwords after:", self.password_expiration_days_spin
+        )
 
         self.password_expiration_warning_spin = QSpinBox()
         self.password_expiration_warning_spin.setMinimum(1)
         self.password_expiration_warning_spin.setMaximum(365)
         self.password_expiration_warning_spin.setSuffix(" days")
-        expiration_layout.addRow("Warn before expiry:", self.password_expiration_warning_spin)
+        expiration_layout.addRow(
+            "Warn before expiry:", self.password_expiration_warning_spin
+        )
 
-        expiration_help = QLabel("Passwords older than the expiration period will be flagged.\n"
-                                "You'll receive warnings before passwords expire.\n"
-                                "Set to 0 to disable password expiration.")
+        expiration_help = QLabel(
+            "Passwords older than the expiration period will be flagged.\n"
+            "You'll receive warnings before passwords expire.\n"
+            "Set to 0 to disable password expiration."
+        )
         expiration_help.setWordWrap(True)
         expiration_help.setStyleSheet("color: #999; font-size: 10px;")
         expiration_layout.addRow("", expiration_help)
@@ -261,7 +293,9 @@ class SettingsDialog(QDialog):
         # Backup location
         location_layout = QHBoxLayout()
         self.auto_backup_location_edit = QLineEdit()
-        self.auto_backup_location_edit.setPlaceholderText("Same folder as vault (default)")
+        self.auto_backup_location_edit.setPlaceholderText(
+            "Same folder as vault (default)"
+        )
         location_layout.addWidget(self.auto_backup_location_edit)
 
         browse_btn = QPushButton("Browse...")
@@ -270,9 +304,11 @@ class SettingsDialog(QDialog):
 
         autobackup_layout.addRow("Backup location:", location_layout)
 
-        backup_help = QLabel("Automatic backups create timestamped copies of your vault.\n"
-                            "Old backups are automatically cleaned up based on retention settings.\n"
-                            "Leave location empty to save backups next to the vault file.")
+        backup_help = QLabel(
+            "Automatic backups create timestamped copies of your vault.\n"
+            "Old backups are automatically cleaned up based on retention settings.\n"
+            "Leave location empty to save backups next to the vault file."
+        )
         backup_help.setWordWrap(True)
         backup_help.setStyleSheet("color: #999; font-size: 10px;")
         autobackup_layout.addRow("", backup_help)
@@ -302,14 +338,16 @@ class SettingsDialog(QDialog):
         self.log_max_size_spin.setSuffix(" MB")
         logging_layout.addRow("Max log file size:", self.log_max_size_spin)
 
-        log_help = QLabel("Logs are stored in the application config directory.\n"
-                         "Sensitive data (passwords, master password) is never logged.\n\n"
-                         "Log levels:\n"
-                         "• DEBUG: Detailed diagnostic information\n"
-                         "• INFO: General informational messages (recommended)\n"
-                         "• WARNING: Warning messages only\n"
-                         "• ERROR: Error messages only\n\n"
-                         "Log files rotate automatically when size limit is reached.")
+        log_help = QLabel(
+            "Logs are stored in the application config directory.\n"
+            "Sensitive data (passwords, master password) is never logged.\n\n"
+            "Log levels:\n"
+            "• DEBUG: Detailed diagnostic information\n"
+            "• INFO: General informational messages (recommended)\n"
+            "• WARNING: Warning messages only\n"
+            "• ERROR: Error messages only\n\n"
+            "Log files rotate automatically when size limit is reached."
+        )
         log_help.setWordWrap(True)
         log_help.setStyleSheet("color: #999; font-size: 10px;")
         logging_layout.addRow("", log_help)
@@ -326,12 +364,16 @@ class SettingsDialog(QDialog):
         widget = QWidget()
         layout = QVBoxLayout()
 
-        warning = QLabel("⚠️ WARNING: These are advanced settings for new vaults.\n"
-                        "Changing these will NOT affect existing vaults.\n"
-                        "Only modify if you understand Argon2id parameters.")
+        warning = QLabel(
+            "⚠️ WARNING: These are advanced settings for new vaults.\n"
+            "Changing these will NOT affect existing vaults.\n"
+            "Only modify if you understand Argon2id parameters."
+        )
         warning.setWordWrap(True)
-        warning.setStyleSheet("color: #c62828; font-weight: bold; padding: 10px; "
-                             "background-color: #3d0000; border: 1px solid #c62828; border-radius: 4px;")
+        warning.setStyleSheet(
+            "color: #c62828; font-weight: bold; padding: 10px; "
+            "background-color: #3d0000; border: 1px solid #c62828; border-radius: 4px;"
+        )
         layout.addWidget(warning)
 
         argon2_group = QGroupBox("Argon2id Parameters for New Vaults")
@@ -344,8 +386,10 @@ class SettingsDialog(QDialog):
         self.argon2_time_spin.setSuffix(" iterations")
         argon2_layout.addRow("Time cost:", self.argon2_time_spin)
 
-        time_help = QLabel("Number of iterations. Higher = slower but more secure.\n"
-                          "Recommended: 3 (OWASP standard)")
+        time_help = QLabel(
+            "Number of iterations. Higher = slower but more secure.\n"
+            "Recommended: 3 (OWASP standard)"
+        )
         time_help.setStyleSheet("color: #999; font-size: 10px;")
         argon2_layout.addRow("", time_help)
 
@@ -356,8 +400,10 @@ class SettingsDialog(QDialog):
         self.argon2_memory_spin.setSuffix(" MB")
         argon2_layout.addRow("Memory cost:", self.argon2_memory_spin)
 
-        memory_help = QLabel("Memory required in megabytes. Higher = more resistant to attacks.\n"
-                            "Recommended: 64 MB (OWASP standard)")
+        memory_help = QLabel(
+            "Memory required in megabytes. Higher = more resistant to attacks.\n"
+            "Recommended: 64 MB (OWASP standard)"
+        )
         memory_help.setStyleSheet("color: #999; font-size: 10px;")
         argon2_layout.addRow("", memory_help)
 
@@ -368,8 +414,9 @@ class SettingsDialog(QDialog):
         self.argon2_parallel_spin.setSuffix(" threads")
         argon2_layout.addRow("Parallelism:", self.argon2_parallel_spin)
 
-        parallel_help = QLabel("Number of parallel threads.\n"
-                              "Recommended: 1 (OWASP standard)")
+        parallel_help = QLabel(
+            "Number of parallel threads.\n" "Recommended: 1 (OWASP standard)"
+        )
         parallel_help.setStyleSheet("color: #999; font-size: 10px;")
         argon2_layout.addRow("", parallel_help)
 
@@ -392,8 +439,10 @@ class SettingsDialog(QDialog):
         self.theme_combo.addItems(["Dark", "Light", "Auto"])
         theme_layout.addRow("Color theme:", self.theme_combo)
 
-        theme_help = QLabel("Choose between dark and light color themes, or Auto to match system theme.\n"
-                           "Changing the theme requires restarting the application.")
+        theme_help = QLabel(
+            "Choose between dark and light color themes, or Auto to match system theme.\n"
+            "Changing the theme requires restarting the application."
+        )
         theme_help.setWordWrap(True)
         theme_help.setStyleSheet("color: #999; font-size: 10px;")
         theme_layout.addRow("", theme_help)
@@ -408,9 +457,7 @@ class SettingsDialog(QDialog):
     def _browse_backup_location(self):
         """Open folder browser for backup location."""
         directory = QFileDialog.getExistingDirectory(
-            self,
-            "Select Backup Location",
-            self.auto_backup_location_edit.text() or ""
+            self, "Select Backup Location", self.auto_backup_location_edit.text() or ""
         )
         if directory:
             self.auto_backup_location_edit.setText(directory)
@@ -418,46 +465,66 @@ class SettingsDialog(QDialog):
     def _load_settings_to_ui(self):
         """Load current settings values into UI controls."""
         # General tab
-        self.autolock_spin.setValue(self.settings['auto_lock_minutes'])
-        self.clipboard_clear_spin.setValue(self.settings['clipboard_clear_seconds'])
-        self.clipboard_history_spin.setValue(self.settings['clipboard_history_size'])
+        self.autolock_spin.setValue(self.settings["auto_lock_minutes"])
+        self.clipboard_clear_spin.setValue(self.settings["clipboard_clear_seconds"])
+        self.clipboard_history_spin.setValue(self.settings["clipboard_history_size"])
 
         # Password generator tab
-        self.gen_length_spin.setValue(self.settings['password_generator_length'])
-        self.gen_uppercase_check.setChecked(self.settings['password_generator_use_uppercase'])
-        self.gen_lowercase_check.setChecked(self.settings['password_generator_use_lowercase'])
-        self.gen_digits_check.setChecked(self.settings['password_generator_use_digits'])
-        self.gen_punctuation_check.setChecked(self.settings['password_generator_use_punctuation'])
+        self.gen_length_spin.setValue(self.settings["password_generator_length"])
+        self.gen_uppercase_check.setChecked(
+            self.settings["password_generator_use_uppercase"]
+        )
+        self.gen_lowercase_check.setChecked(
+            self.settings["password_generator_use_lowercase"]
+        )
+        self.gen_digits_check.setChecked(self.settings["password_generator_use_digits"])
+        self.gen_punctuation_check.setChecked(
+            self.settings["password_generator_use_punctuation"]
+        )
 
         # Password management tab
-        self.password_history_limit_spin.setValue(self.settings.get('password_history_limit', 5))
-        self.password_expiration_days_spin.setValue(self.settings.get('password_expiration_days', 90))
-        self.password_expiration_warning_spin.setValue(self.settings.get('password_expiration_warning_days', 14))
+        self.password_history_limit_spin.setValue(
+            self.settings.get("password_history_limit", 5)
+        )
+        self.password_expiration_days_spin.setValue(
+            self.settings.get("password_expiration_days", 90)
+        )
+        self.password_expiration_warning_spin.setValue(
+            self.settings.get("password_expiration_warning_days", 14)
+        )
 
         # Backup tab
-        self.auto_backup_enabled_check.setChecked(self.settings.get('auto_backup_enabled', False))
-        frequency_map = {'on_change': 0, 'daily': 1, 'weekly': 2}
-        frequency = self.settings.get('auto_backup_frequency', 'weekly')
-        self.auto_backup_frequency_combo.setCurrentIndex(frequency_map.get(frequency, 2))
-        self.auto_backup_keep_count_spin.setValue(self.settings.get('auto_backup_keep_count', 5))
-        self.auto_backup_location_edit.setText(self.settings.get('auto_backup_location', ''))
+        self.auto_backup_enabled_check.setChecked(
+            self.settings.get("auto_backup_enabled", False)
+        )
+        frequency_map = {"on_change": 0, "daily": 1, "weekly": 2}
+        frequency = self.settings.get("auto_backup_frequency", "weekly")
+        self.auto_backup_frequency_combo.setCurrentIndex(
+            frequency_map.get(frequency, 2)
+        )
+        self.auto_backup_keep_count_spin.setValue(
+            self.settings.get("auto_backup_keep_count", 5)
+        )
+        self.auto_backup_location_edit.setText(
+            self.settings.get("auto_backup_location", "")
+        )
 
         # Logging tab
-        log_level = self.settings.get('log_level', 'INFO')
-        log_level_map = {'DEBUG': 0, 'INFO': 1, 'WARNING': 2, 'ERROR': 3}
+        log_level = self.settings.get("log_level", "INFO")
+        log_level_map = {"DEBUG": 0, "INFO": 1, "WARNING": 2, "ERROR": 3}
         self.log_level_combo.setCurrentIndex(log_level_map.get(log_level, 1))
-        self.log_max_size_spin.setValue(self.settings.get('log_max_size_mb', 10))
+        self.log_max_size_spin.setValue(self.settings.get("log_max_size_mb", 10))
 
         # Security tab
         # Convert memory cost from bytes to MB for display
-        memory_mb = self.settings['vault_argon2_memory_cost'] // 1024
-        self.argon2_time_spin.setValue(self.settings['vault_argon2_time_cost'])
+        memory_mb = self.settings["vault_argon2_memory_cost"] // 1024
+        self.argon2_time_spin.setValue(self.settings["vault_argon2_time_cost"])
         self.argon2_memory_spin.setValue(memory_mb)
-        self.argon2_parallel_spin.setValue(self.settings['vault_argon2_parallelism'])
+        self.argon2_parallel_spin.setValue(self.settings["vault_argon2_parallelism"])
 
         # Appearance tab
-        theme = self.settings.get('theme', 'dark')
-        theme_map = {'dark': 0, 'light': 1, 'auto': 2}
+        theme = self.settings.get("theme", "dark")
+        theme_map = {"dark": 0, "light": 1, "auto": 2}
         self.theme_combo.setCurrentIndex(theme_map.get(theme, 0))
 
     def _collect_settings_from_ui(self) -> dict:
@@ -465,46 +532,62 @@ class SettingsDialog(QDialog):
         settings = {}
 
         # General tab
-        settings['auto_lock_minutes'] = self.autolock_spin.value()
-        settings['clipboard_clear_seconds'] = self.clipboard_clear_spin.value()
-        settings['clipboard_history_size'] = self.clipboard_history_spin.value()
+        settings["auto_lock_minutes"] = self.autolock_spin.value()
+        settings["clipboard_clear_seconds"] = self.clipboard_clear_spin.value()
+        settings["clipboard_history_size"] = self.clipboard_history_spin.value()
 
         # Password generator tab
-        settings['password_generator_length'] = self.gen_length_spin.value()
-        settings['password_generator_use_uppercase'] = self.gen_uppercase_check.isChecked()
-        settings['password_generator_use_lowercase'] = self.gen_lowercase_check.isChecked()
-        settings['password_generator_use_digits'] = self.gen_digits_check.isChecked()
-        settings['password_generator_use_punctuation'] = self.gen_punctuation_check.isChecked()
+        settings["password_generator_length"] = self.gen_length_spin.value()
+        settings["password_generator_use_uppercase"] = (
+            self.gen_uppercase_check.isChecked()
+        )
+        settings["password_generator_use_lowercase"] = (
+            self.gen_lowercase_check.isChecked()
+        )
+        settings["password_generator_use_digits"] = self.gen_digits_check.isChecked()
+        settings["password_generator_use_punctuation"] = (
+            self.gen_punctuation_check.isChecked()
+        )
 
         # Password management tab
-        settings['password_history_limit'] = self.password_history_limit_spin.value()
-        settings['password_expiration_days'] = self.password_expiration_days_spin.value()
-        settings['password_expiration_warning_days'] = self.password_expiration_warning_spin.value()
+        settings["password_history_limit"] = self.password_history_limit_spin.value()
+        settings["password_expiration_days"] = (
+            self.password_expiration_days_spin.value()
+        )
+        settings["password_expiration_warning_days"] = (
+            self.password_expiration_warning_spin.value()
+        )
 
         # Backup tab
-        settings['auto_backup_enabled'] = self.auto_backup_enabled_check.isChecked()
-        frequency_values = ['on_change', 'daily', 'weekly']
-        settings['auto_backup_frequency'] = frequency_values[self.auto_backup_frequency_combo.currentIndex()]
-        settings['auto_backup_keep_count'] = self.auto_backup_keep_count_spin.value()
-        settings['auto_backup_location'] = self.auto_backup_location_edit.text().strip()
+        settings["auto_backup_enabled"] = self.auto_backup_enabled_check.isChecked()
+        frequency_values = ["on_change", "daily", "weekly"]
+        settings["auto_backup_frequency"] = frequency_values[
+            self.auto_backup_frequency_combo.currentIndex()
+        ]
+        settings["auto_backup_keep_count"] = self.auto_backup_keep_count_spin.value()
+        settings["auto_backup_location"] = self.auto_backup_location_edit.text().strip()
 
         # Logging tab
-        log_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR']
-        settings['log_level'] = log_levels[self.log_level_combo.currentIndex()]
-        settings['log_max_size_mb'] = self.log_max_size_spin.value()
+        log_levels = ["DEBUG", "INFO", "WARNING", "ERROR"]
+        settings["log_level"] = log_levels[self.log_level_combo.currentIndex()]
+        settings["log_max_size_mb"] = self.log_max_size_spin.value()
 
         # Security tab - convert MB back to bytes
-        settings['vault_argon2_time_cost'] = self.argon2_time_spin.value()
-        settings['vault_argon2_memory_cost'] = self.argon2_memory_spin.value() * 1024
-        settings['vault_argon2_parallelism'] = self.argon2_parallel_spin.value()
-        settings['vault_argon2_hash_len'] = self.settings['vault_argon2_hash_len']  # Not exposed in UI
+        settings["vault_argon2_time_cost"] = self.argon2_time_spin.value()
+        settings["vault_argon2_memory_cost"] = self.argon2_memory_spin.value() * 1024
+        settings["vault_argon2_parallelism"] = self.argon2_parallel_spin.value()
+        settings["vault_argon2_hash_len"] = self.settings[
+            "vault_argon2_hash_len"
+        ]  # Not exposed in UI
 
         # Appearance tab
-        theme_values = ['dark', 'light', 'auto']
-        settings['theme'] = theme_values[self.theme_combo.currentIndex()]
+        theme_values = ["dark", "light", "auto"]
+        settings["theme"] = theme_values[self.theme_combo.currentIndex()]
 
         # Entry sorting (not exposed in UI yet, preserve existing)
-        settings['entry_sort_order'] = self.settings.get('entry_sort_order', 'alphabetical')
+        settings["entry_sort_order"] = self.settings.get(
+            "entry_sort_order", "alphabetical"
+        )
 
         return settings
 
@@ -514,7 +597,7 @@ class SettingsDialog(QDialog):
             self,
             "Reset Settings",
             "Are you sure you want to reset all settings to their default values?",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if reply == QMessageBox.Yes:
@@ -536,14 +619,14 @@ class SettingsDialog(QDialog):
                 self,
                 "Settings Saved",
                 "Settings have been saved successfully.\n"
-                "Some changes may require restarting the application."
+                "Some changes may require restarting the application.",
             )
             self.accept()
         else:
             QMessageBox.critical(
                 self,
                 "Save Failed",
-                "Failed to save settings. Please check file permissions."
+                "Failed to save settings. Please check file permissions.",
             )
 
     def get_settings(self) -> dict:
