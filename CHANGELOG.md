@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Missing QComboBox import in main_window.py preventing application startup
+- Unused QFlowLayout import in entry_dialog.py
+
+### Added
+- Input length validation for all text fields to prevent memory exhaustion attacks
+- Maximum length constraints: title (256), username (256), password (1024), notes (10,000), tags (50 chars, 50 max)
+- Character counter for notes field with color-coded visual feedback
+- Tag length and count validation with user-friendly error messages
+- Comprehensive test suite for configuration module (test_config.py)
+- Comprehensive test suite for backup module (test_backup.py)
+- Comprehensive test suite for logging module (test_logging.py)
+- Belt-and-suspenders validation in entry save logic
+
+### Security
+- Input validation prevents potential memory exhaustion attacks via oversized field data
+- Character counters provide user feedback before hitting limits
+- Validation occurs at UI level (setMaxLength) and business logic level (save validation)
+
+## [2.3.0] - 2025-11-08
+
+### Fixed
+- Critical import error causing application crash at startup (QComboBox missing from imports)
+- Code hygiene issue with unused QFlowLayout import
+
+### Added
+- Comprehensive input validation across all entry fields
+- Test coverage for configuration management (30+ test cases)
+- Test coverage for backup functionality (25+ test cases)
+- Test coverage for logging system (20+ test cases)
+
+### Changed
+- Version bumped from 2.2.0 to 2.3.0
+- Entry dialog now enforces maximum field lengths at UI and validation layers
+- Notes field displays live character counter with color coding
+
+### Security
+- Input validation system prevents memory exhaustion attacks
+- Field length limits enforce reasonable data boundaries
+- Dual-layer validation (UI + business logic) for defense in depth
+
 ## [2.2.0] - 2025-11-08
 
 ### Added

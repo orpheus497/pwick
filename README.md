@@ -1,10 +1,10 @@
 # pwick 🛡️
-**Version 2.2.0** - _A simple, secure, and 100% local password manager._
+**Version 2.3.0** - _A simple, secure, and 100% local password manager._
 
 Created by orpheus497.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
