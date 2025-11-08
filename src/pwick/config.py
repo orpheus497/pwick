@@ -84,8 +84,26 @@ def get_default_settings() -> Dict[str, Any]:
         'password_generator_use_digits': True,
         'password_generator_use_punctuation': True,
 
+        # Password management settings
+        'password_history_limit': 5,
+        'password_expiration_days': 90,
+        'password_expiration_warning_days': 14,
+
+        # Automatic backup settings
+        'auto_backup_enabled': False,
+        'auto_backup_location': '',  # Empty string means same directory as vault
+        'auto_backup_frequency': 'weekly',  # 'daily', 'weekly', 'on_change'
+        'auto_backup_keep_count': 5,
+
         # Appearance settings
-        'theme': 'dark',  # Future: 'light' option
+        'theme': 'dark',  # 'dark' or 'light'
+
+        # Logging settings
+        'log_level': 'INFO',  # 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+        'log_max_size_mb': 10,
+
+        # UI settings
+        'entry_sort_order': 'alphabetical',  # 'alphabetical', 'date_created', 'date_modified'
 
         # Advanced security settings (Argon2id parameters for new vaults)
         'vault_argon2_time_cost': 3,
@@ -234,6 +252,52 @@ def validate_settings(settings: Dict[str, Any]) -> Dict[str, Any]:
         validated['password_generator_use_lowercase'] = True
         validated['password_generator_use_digits'] = True
         validated['password_generator_use_punctuation'] = True
+
+    # Validate password_history_limit (1-20)
+    if validated['password_history_limit'] < 1:
+        validated['password_history_limit'] = 1
+    elif validated['password_history_limit'] > 20:
+        validated['password_history_limit'] = 20
+
+    # Validate password_expiration_days (0 to disable, or 1-3650 days)
+    if validated['password_expiration_days'] < 0:
+        validated['password_expiration_days'] = 0
+    elif validated['password_expiration_days'] > 3650:  # 10 years max
+        validated['password_expiration_days'] = 3650
+
+    # Validate password_expiration_warning_days (1-365 days)
+    if validated['password_expiration_warning_days'] < 1:
+        validated['password_expiration_warning_days'] = 1
+    elif validated['password_expiration_warning_days'] > 365:
+        validated['password_expiration_warning_days'] = 365
+
+    # Validate auto_backup_frequency
+    if validated['auto_backup_frequency'] not in ['daily', 'weekly', 'on_change']:
+        validated['auto_backup_frequency'] = 'weekly'
+
+    # Validate auto_backup_keep_count (1-50)
+    if validated['auto_backup_keep_count'] < 1:
+        validated['auto_backup_keep_count'] = 1
+    elif validated['auto_backup_keep_count'] > 50:
+        validated['auto_backup_keep_count'] = 50
+
+    # Validate theme
+    if validated['theme'] not in ['dark', 'light']:
+        validated['theme'] = 'dark'
+
+    # Validate log_level
+    if validated['log_level'] not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
+        validated['log_level'] = 'INFO'
+
+    # Validate log_max_size_mb (1-100 MB)
+    if validated['log_max_size_mb'] < 1:
+        validated['log_max_size_mb'] = 1
+    elif validated['log_max_size_mb'] > 100:
+        validated['log_max_size_mb'] = 100
+
+    # Validate entry_sort_order
+    if validated['entry_sort_order'] not in ['alphabetical', 'date_created', 'date_modified']:
+        validated['entry_sort_order'] = 'alphabetical'
 
     # Validate Argon2id parameters
     if validated['vault_argon2_time_cost'] < 1:

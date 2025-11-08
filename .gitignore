@@ -45,6 +45,15 @@ Thumbs.db
 test_vault_*.json
 .pytest_cache/
 
+# Log files
+*.log
+*.log.*
+logs/
+
+# Backup files
+backups/
+*.backup
+
 # AI-generated docs and sessions
 .dev-docs/
 .claude/

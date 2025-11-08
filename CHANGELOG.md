@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Vault file integrity verification using SHA-256 hashing to detect corruption and tampering
+- Password change tracking with `last_password_change` timestamp field in entries
+- Configurable password history limit via settings (default: 5, range: 1-20)
+- Password expiration tracking system with configurable expiration days (default: 90 days)
+- Password expiration warning system with configurable warning period (default: 14 days)
+- Automatic backup system with configurable frequency (daily, weekly, on_change)
+- Automatic backup rotation keeping configurable number of recent backups (default: 5)
+- Backup management module (backup.py) for creating, listing, and restoring backups
+- Comprehensive logging system with rotating file handler and configurable log levels
+- Sensitive data sanitization filter for logs preventing password leakage
+- Logging configuration module (logging_config.py) for centralized logging setup
+- Light theme support in addition to existing dark theme
+- Theme management module (themes.py) for centralized theme handling
+- New settings for password history limit, expiration tracking, auto-backup, logging, and sorting
+- Settings validation for all new configuration options
+- TESTING.md documentation with comprehensive testing procedures and guidelines
+- Log file patterns and backup directory patterns added to .gitignore
+
+### Changed
+- Vault Entry TypedDict now includes `last_password_change` field for password age tracking
+- Vault file format now includes `integrity_hash` field for file integrity verification
+- Vault load function now verifies integrity hash when present (backwards compatible)
+- Vault save function now computes and stores integrity hash
+- Entry update function now updates `last_password_change` when password changes
+- Entry migration function updated to handle v2.2 format with new fields
+- Settings default dictionary expanded with new configuration options
+- Settings validation function expanded to validate all new settings
+- Configuration module updated to support 13 new settings for enhanced functionality
+- Theme stylesheet extracted from main_window.py to themes.py module for better organization
+
+### Fixed
+- Vault integrity verification prevents use of corrupted or tampered vault files
+- Password change timestamps enable accurate password age calculation
+- Backup system prevents data loss from user forgetfulness or system failures
+
+### Security
+- Vault file integrity verification detects unauthorized modifications
+- Logging system sanitizes sensitive data preventing password exposure in logs
+- Password expiration tracking encourages regular password rotation
+- Automatic backups reduce risk of data loss from corruption or accidents
+
+### Documentation
+- Created comprehensive TESTING.md with unit, integration, security, and manual testing procedures
+- Updated SECURITY.md to reference correct dependency (PySide6 instead of PyQt5)
+- Updated .gitignore to exclude log files, backup files, and development artifacts
+- Enhanced code documentation with detailed docstrings in new modules
+
+### Migration
+- All vault format changes maintain backwards compatibility through migration functions
+- Existing vaults load correctly and automatically migrate to new format on save
+- New fields added to entries with sensible defaults (timestamps, empty lists, false booleans)
+- Settings migration automatically adds new settings with defaults when loading old configs
+
 ## [2.1.0] - 2025-10-31
 
 ### Added
