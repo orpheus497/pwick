@@ -7,6 +7,7 @@ import sys
 import secrets
 import string
 import base64
+import logging
 from typing import Optional, Dict, Any, List
 from datetime import datetime, date
 
@@ -25,12 +26,17 @@ import csv
 
 from .. import vault
 from ..config import load_settings, save_settings
+from ..logging_config import setup_logging, get_logger
+from .themes import get_stylesheet
 from .widgets.welcome_dialog import WelcomeDialog
 from .widgets.master_password_dialog import MasterPasswordDialog
 from .widgets.entry_dialog import EntryDialog
 from .widgets.settings_dialog import SettingsDialog
 from .widgets.security_audit_dialog import SecurityAuditDialog
 from .widgets.password_history_dialog import PasswordHistoryDialog
+
+# Initialize module logger
+logger = get_logger(__name__)
 
 
 class EncryptedClipboard:
@@ -91,127 +97,6 @@ class EncryptedClipboard:
         except Exception:
             # Decryption failed or invalid format
             return None
-
-
-# Dark theme stylesheet with black, grey, white, and red accents
-DARK_STYLESHEET = """
-QMainWindow, QDialog, QWidget {
-    background-color: #1a1a1a;
-    color: #e0e0e0;
-}
-
-QLabel {
-    color: #e0e0e0;
-    font-size: 12px;
-}
-
-QPushButton {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QPushButton:hover {
-    background-color: #3d3d3d;
-    border: 1px solid #c62828;
-}
-
-QPushButton:pressed {
-    background-color: #c62828;
-}
-
-QPushButton#primaryButton {
-    background-color: #c62828;
-    border: 1px solid #b71c1c;
-}
-
-QPushButton#primaryButton:hover {
-    background-color: #d32f2f;
-}
-
-QPushButton#primaryButton:pressed {
-    background-color: #b71c1c;
-}
-
-QLineEdit, QTextEdit {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    padding: 6px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QLineEdit:focus, QTextEdit:focus {
-    border: 1px solid #c62828;
-}
-
-QListWidget {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QListWidget::item {
-    padding: 8px;
-    border-bottom: 1px solid #404040;
-}
-
-QListWidget::item:selected {
-    background-color: #c62828;
-    color: #ffffff;
-}
-
-QListWidget::item:hover {
-    background-color: #3d3d3d;
-}
-
-QGroupBox {
-    border: 1px solid #404040;
-    border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 12px;
-    color: #e0e0e0;
-    font-weight: bold;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 8px;
-}
-
-QCheckBox {
-    color: #e0e0e0;
-    spacing: 8px;
-}
-
-QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-    border: 1px solid #404040;
-    border-radius: 3px;
-    background-color: #2d2d2d;
-}
-
-QCheckBox::indicator:checked {
-    background-color: #c62828;
-    border: 1px solid #b71c1c;
-}
-
-QMessageBox {
-    background-color: #1a1a1a;
-}
-
-QMessageBox QLabel {
-    color: #e0e0e0;
-}
-"""
 
 
 class MainWindow(QMainWindow):
@@ -634,6 +519,7 @@ class MainWindow(QMainWindow):
             sys.exit(0)
 
     def _create_vault(self, path: str):
+        logger.info(f"Creating new vault at: {path}")
         password_dialog = MasterPasswordDialog(confirm_mode=True, parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             try:
@@ -642,14 +528,18 @@ class MainWindow(QMainWindow):
                 self.vault_path = path
                 self.master_password = password_dialog.password
                 self._refresh_lists()
+                logger.info("Vault created successfully")
                 QMessageBox.information(self, "Success", "Vault created successfully!")
             except Exception as e:
+                logger.error(f"Failed to create vault: {e}", exc_info=True)
                 QMessageBox.critical(self, "Error", f"Failed to create vault: {e}")
                 self._show_welcome()
         else:
+            logger.info("Vault creation cancelled by user")
             self._show_welcome()
 
     def _import_vault(self, source_path: str):
+        logger.info(f"Importing vault from: {source_path}")
         password_dialog = MasterPasswordDialog(parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             target_path, _ = QFileDialog.getSaveFileName(
@@ -666,19 +556,25 @@ class MainWindow(QMainWindow):
                     self.vault_path = target_path
                     self.master_password = password_dialog.password
                     self._refresh_lists()
+                    logger.info(f"Vault imported successfully to: {target_path}")
                     QMessageBox.information(self, "Success", "Vault imported successfully!")
                 except vault.VaultAuthenticationError:
+                    logger.warning("Vault import failed: Incorrect master password")
                     QMessageBox.critical(self, "Error", "Incorrect master password.")
                     self._show_welcome()
                 except Exception as e:
+                    logger.error(f"Failed to import vault: {e}", exc_info=True)
                     QMessageBox.critical(self, "Error", f"Failed to import vault: {e}")
                     self._show_welcome()
             else:
+                logger.info("Vault import cancelled by user")
                 self._show_welcome()
         else:
+            logger.info("Vault import cancelled by user")
             self._show_welcome()
 
     def _open_vault(self, path: str):
+        logger.info(f"Opening vault at: {path}")
         password_dialog = MasterPasswordDialog(parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             try:
@@ -687,13 +583,23 @@ class MainWindow(QMainWindow):
                 self.vault_path = path
                 self.master_password = password_dialog.password
                 self._refresh_lists()
+                logger.info(f"Vault opened successfully with {len(self.vault_data['entries'])} entries")
             except vault.VaultAuthenticationError:
+                logger.warning("Vault open failed: Incorrect master password")
                 QMessageBox.critical(self, "Error", "Incorrect master password.")
                 self._show_welcome()
+            except vault.VaultIntegrityError as e:
+                logger.error(f"Vault integrity check failed: {e}")
+                QMessageBox.critical(self, "Integrity Error",
+                    "Vault integrity check failed. The file may be corrupted or tampered with.\n\n"
+                    "Do NOT use this vault. Restore from a backup if available.")
+                self._show_welcome()
             except Exception as e:
+                logger.error(f"Failed to open vault: {e}", exc_info=True)
                 QMessageBox.critical(self, "Error", f"Failed to open vault: {e}")
                 self._show_welcome()
         else:
+            logger.info("Vault open cancelled by user")
             self._show_welcome()
 
     def _refresh_lists(self):
@@ -933,6 +839,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Error", f"Failed to export vault: {e}")
     
     def _lock_vault(self):
+        logger.info("Locking vault")
         self.vault_data = None
         self.vault_path = None
         self.master_password = None
@@ -942,6 +849,7 @@ class MainWindow(QMainWindow):
         self.note_list.clear()
         self.auto_lock_timer.stop()
         self._show_welcome()
+        logger.info("Vault locked successfully")
 
     def _open_settings_dialog(self):
         """Open the settings dialog."""
@@ -1078,10 +986,31 @@ class MainWindow(QMainWindow):
 
 def run():
     """Run the application."""
+    # Load settings to get theme and logging preferences
+    settings = load_settings()
+
+    # Setup logging system
+    log_level = settings.get('log_level', 'INFO')
+    log_max_size = settings.get('log_max_size_mb', 10) * 1024 * 1024  # Convert MB to bytes
+    setup_logging(level=log_level, max_bytes=log_max_size)
+
+    logger.info("Starting pwick application")
+
+    # Create application
     app = QApplication(sys.argv)
-    app.setStyleSheet(DARK_STYLESHEET)
-    
+
+    # Apply theme from settings
+    theme = settings.get('theme', 'dark')
+    stylesheet = get_stylesheet(theme)
+    app.setStyleSheet(stylesheet)
+    logger.info(f"Applied {theme} theme")
+
+    # Create and show main window
     window = MainWindow()
     window.show()
-    
-    sys.exit(app.exec())
+    logger.info("Main window displayed")
+
+    # Run application
+    exit_code = app.exec()
+    logger.info(f"Application exiting with code {exit_code}")
+    sys.exit(exit_code)

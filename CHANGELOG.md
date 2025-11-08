@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Logging configuration module (logging_config.py) for centralized logging setup
 - Light theme support in addition to existing dark theme
 - Theme management module (themes.py) for centralized theme handling
+- Logging integration in main window for vault operations (create, open, import, export, lock)
+- Theme switching on application startup based on user settings
+- Integrity error handling with user-friendly error messages
 - New settings for password history limit, expiration tracking, auto-backup, logging, and sorting
 - Settings validation for all new configuration options
 - TESTING.md documentation with comprehensive testing procedures and guidelines
@@ -37,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings validation function expanded to validate all new settings
 - Configuration module updated to support 13 new settings for enhanced functionality
 - Theme stylesheet extracted from main_window.py to themes.py module for better organization
+- Application startup now initializes logging system before creating UI
+- Application startup now loads and applies theme from user settings
+- Main window imports logging_config and themes modules
+- CSV export function verified present and working (not a bug as initially assessed)
 
 ### Fixed
 - Vault integrity verification prevents use of corrupted or tampered vault files
