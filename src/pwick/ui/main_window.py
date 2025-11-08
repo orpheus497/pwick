@@ -7,27 +7,51 @@ from __future__ import annotations
 
 import sys
 import secrets
-import string
 import base64
-import logging
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, List
 from datetime import datetime, date
 
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QLineEdit, QTextEdit, QListWidget, QListWidgetItem,
-    QDialog, QFileDialog, QMessageBox, QCheckBox, QGroupBox, QFormLayout,
-    QSystemTrayIcon, QMenu, QTabWidget, QInputDialog, QComboBox
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QLabel,
+    QLineEdit,
+    QTextEdit,
+    QListWidget,
+    QListWidgetItem,
+    QDialog,
+    QFileDialog,
+    QMessageBox,
+    QGroupBox,
+    QFormLayout,
+    QSystemTrayIcon,
+    QMenu,
+    QTabWidget,
+    QInputDialog,
+    QComboBox,
 )
 from PySide6.QtCore import Qt, QTimer, QKeyCombination
-from PySide6.QtGui import QFont, QKeySequence, QIcon, QPixmap, QPainter, QColor, QAction, QShortcut
+from PySide6.QtGui import (
+    QFont,
+    QKeySequence,
+    QIcon,
+    QPixmap,
+    QPainter,
+    QColor,
+    QAction,
+    QShortcut,
+)
 
 import pyperclip
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import csv
 
 from .. import vault
-from ..config import load_settings, save_settings
+from ..config import load_settings
 from ..logging_config import setup_logging, get_logger
 from ..system_theme import get_auto_theme
 from .themes import get_stylesheet
@@ -51,13 +75,13 @@ class EncryptedClipboard:
     Encrypted clipboard manager to prevent telemetry and clipboard snooping.
     Encrypts data before placing on system clipboard using AES-256-GCM.
     """
-    
+
     def __init__(self):
         # Generate a session key for this application instance
         self.session_key = AESGCM.generate_key(bit_length=256)
         self.cipher = AESGCM(self.session_key)
         self.prefix = "PWICK_ENC:"
-    
+
     def copy_encrypted(self, plaintext: str) -> None:
         """
         Encrypt plaintext and copy to clipboard.
@@ -73,10 +97,10 @@ class EncryptedClipboard:
         nonce = secrets.token_bytes(12)
 
         # Encrypt the plaintext
-        ciphertext = self.cipher.encrypt(nonce, plaintext.encode('utf-8'), None)
+        ciphertext = self.cipher.encrypt(nonce, plaintext.encode("utf-8"), None)
 
         # Combine nonce + ciphertext and encode as base64
-        encrypted_blob = base64.b64encode(nonce + ciphertext).decode('ascii')
+        encrypted_blob = base64.b64encode(nonce + ciphertext).decode("ascii")
 
         # Copy to clipboard with prefix (may raise exception if clipboard unavailable)
         try:
@@ -84,7 +108,7 @@ class EncryptedClipboard:
         except Exception as e:
             # Re-raise with more context
             raise Exception(f"Clipboard access failed: {e}") from e
-    
+
     def paste_decrypted(self) -> Optional[str]:
         """
         Retrieve from clipboard and decrypt if it's our encrypted format.
@@ -92,22 +116,22 @@ class EncryptedClipboard:
         """
         try:
             clipboard_content = pyperclip.paste()
-            
+
             if not clipboard_content.startswith(self.prefix):
                 # Not our encrypted data, could be from external source
                 return None
-            
+
             # Remove prefix and decode base64
-            encrypted_blob = clipboard_content[len(self.prefix):]
+            encrypted_blob = clipboard_content[len(self.prefix) :]
             encrypted_data = base64.b64decode(encrypted_blob)
-            
+
             # Extract nonce and ciphertext
             nonce = encrypted_data[:12]
             ciphertext = encrypted_data[12:]
-            
+
             # Decrypt
             plaintext = self.cipher.decrypt(nonce, ciphertext, None)
-            return plaintext.decode('utf-8')
+            return plaintext.decode("utf-8")
         except Exception:
             # Decryption failed or invalid format
             return None
@@ -115,10 +139,10 @@ class EncryptedClipboard:
 
 class MainWindow(QMainWindow):
     """Main application window."""
-    
+
     def __init__(self):
         super().__init__()
-        
+
         self.vault_path: Optional[str] = None
         self.vault_data: Optional[vault.Vault] = None
         self.master_password: Optional[str] = None
@@ -126,8 +150,8 @@ class MainWindow(QMainWindow):
 
         # Load user settings
         self.settings = load_settings()
-        self.auto_lock_minutes = self.settings['auto_lock_minutes']
-        self.max_clipboard_history = self.settings['clipboard_history_size']
+        self.auto_lock_minutes = self.settings["auto_lock_minutes"]
+        self.max_clipboard_history = self.settings["clipboard_history_size"]
 
         self.encrypted_clipboard = EncryptedClipboard()
         self.clipboard_timer = QTimer()
@@ -137,7 +161,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("pwick - Password Manager")
         self.resize(900, 600)
-        
+
         # Setup system tray
         self._setup_system_tray()
 
@@ -178,7 +202,7 @@ class MainWindow(QMainWindow):
                 f"  Ubuntu/Debian: sudo apt install xclip\n"
                 f"  Fedora: sudo dnf install xclip\n"
                 f"  Arch: sudo pacman -S xclip\n\n"
-                f"The password is still available in the entry dialog."
+                f"The password is still available in the entry dialog.",
             )
             return False
 
@@ -194,34 +218,34 @@ class MainWindow(QMainWindow):
         pixmap.fill(QColor(198, 40, 40))
         painter = QPainter(pixmap)
         painter.setPen(QColor(255, 255, 255))
-        painter.setFont(QFont('Arial', 40, QFont.Bold))
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, 'P')
+        painter.setFont(QFont("Arial", 40, QFont.Bold))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, "P")
         painter.end()
         icon = QIcon(pixmap)
-        
+
         self.tray_icon = QSystemTrayIcon(icon, self)
         tray_menu = QMenu()
-        
+
         show_action = QAction("Show", self)
         show_action.triggered.connect(self._show_from_tray)
         tray_menu.addAction(show_action)
-        
+
         hide_action = QAction("Hide to Tray", self)
         hide_action.triggered.connect(self._hide_to_tray)
         tray_menu.addAction(hide_action)
-        
+
         tray_menu.addSeparator()
-        
+
         lock_action = QAction("Lock Vault", self)
         lock_action.triggered.connect(self._lock_vault)
         tray_menu.addAction(lock_action)
-        
+
         tray_menu.addSeparator()
-        
+
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(self._quit_application)
         tray_menu.addAction(quit_action)
-        
+
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.activated.connect(self._on_tray_activated)
         self.tray_icon.show()
@@ -229,30 +253,30 @@ class MainWindow(QMainWindow):
             "pwick Running",
             "pwick is running in the background. Click the tray icon to show/hide.",
             QSystemTrayIcon.Information,
-            2000
+            2000,
         )
-    
+
     def _on_tray_activated(self, reason):
         if reason == QSystemTrayIcon.DoubleClick:
             if self.isVisible():
                 self._hide_to_tray()
             else:
                 self._show_from_tray()
-    
+
     def _show_from_tray(self):
         self.show()
         self.raise_()
         self.activateWindow()
-    
+
     def _hide_to_tray(self):
         self.hide()
         self.tray_icon.showMessage(
             "pwick Minimized",
             "pwick is running in the background. Double-click the tray icon to restore.",
             QSystemTrayIcon.Information,
-            2000
+            2000,
         )
-    
+
     def _quit_application(self):
         self.master_password = None
         self.vault_data = None
@@ -260,26 +284,26 @@ class MainWindow(QMainWindow):
         self._clear_clipboard()
         self.tray_icon.hide()
         QApplication.quit()
-    
+
     def closeEvent(self, event):
         if self.tray_icon.isVisible():
             event.ignore()
             self._hide_to_tray()
         else:
             event.accept()
-    
+
     def _setup_ui(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-        
+
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs)
-        
+
         # --- Passwords Tab ---
         passwords_tab = QWidget()
         passwords_layout = QHBoxLayout(passwords_tab)
-        
+
         left_panel = QVBoxLayout()
         left_header = QHBoxLayout()
         list_label = QLabel("Passwords")
@@ -294,7 +318,7 @@ class MainWindow(QMainWindow):
         import_csv_btn.clicked.connect(self._import_csv)
         left_header.addWidget(import_csv_btn)
         left_panel.addLayout(left_header)
-        
+
         self.search_passwords = QLineEdit()
         self.search_passwords.setPlaceholderText("Search passwords...")
         self.search_passwords.textChanged.connect(self._filter_lists)
@@ -307,14 +331,16 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(sort_label)
 
         self.sort_combo = QComboBox()
-        self.sort_combo.addItems([
-            "Alphabetical (A-Z)",
-            "Alphabetical (Z-A)",
-            "Date Created (Newest)",
-            "Date Created (Oldest)",
-            "Date Modified (Newest)",
-            "Date Modified (Oldest)"
-        ])
+        self.sort_combo.addItems(
+            [
+                "Alphabetical (A-Z)",
+                "Alphabetical (Z-A)",
+                "Date Created (Newest)",
+                "Date Created (Oldest)",
+                "Date Modified (Newest)",
+                "Date Modified (Oldest)",
+            ]
+        )
         self.sort_combo.currentIndexChanged.connect(self._refresh_lists)
         controls_layout.addWidget(self.sort_combo)
 
@@ -324,11 +350,7 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(filter_label)
 
         self.filter_combo = QComboBox()
-        self.filter_combo.addItems([
-            "All Entries",
-            "Pinned Only",
-            "Unpinned Only"
-        ])
+        self.filter_combo.addItems(["All Entries", "Pinned Only", "Unpinned Only"])
         self.filter_combo.currentIndexChanged.connect(self._filter_lists)
         controls_layout.addWidget(self.filter_combo)
 
@@ -347,12 +369,12 @@ class MainWindow(QMainWindow):
         self.entry_list.currentItemChanged.connect(self._on_entry_selected)
         left_panel.addWidget(self.entry_list)
         passwords_layout.addLayout(left_panel, 2)
-        
+
         right_panel = QVBoxLayout()
         details_label = QLabel("Password Details")
         details_label.setFont(QFont("Arial", 14, QFont.Bold))
         right_panel.addWidget(details_label)
-        
+
         details_group = QGroupBox()
         details_layout = QFormLayout()
         self.detail_title = QLabel("-")
@@ -369,16 +391,18 @@ class MainWindow(QMainWindow):
         details_layout.addRow("Notes:", self.detail_notes)
         details_group.setLayout(details_layout)
         right_panel.addWidget(details_group)
-        
+
         clipboard_label = QLabel("Clipboard History (Last 30)")
         clipboard_label.setFont(QFont("Arial", 12, QFont.Bold))
         right_panel.addWidget(clipboard_label)
-        
+
         self.clipboard_history_list = QListWidget()
         self.clipboard_history_list.setMaximumHeight(150)
-        self.clipboard_history_list.itemDoubleClicked.connect(self._on_clipboard_history_double_click)
+        self.clipboard_history_list.itemDoubleClicked.connect(
+            self._on_clipboard_history_double_click
+        )
         right_panel.addWidget(self.clipboard_history_list)
-        
+
         action_layout = QHBoxLayout()
         edit_btn = QPushButton("Edit")
         edit_btn.clicked.connect(self._edit_password_entry)
@@ -395,7 +419,7 @@ class MainWindow(QMainWindow):
         action_layout.addWidget(copy_btn)
         right_panel.addLayout(action_layout)
         right_panel.addStretch()
-        
+
         bottom_layout = QHBoxLayout()
         export_btn = QPushButton("Export Vault")
         export_btn.clicked.connect(self._export_vault)
@@ -407,11 +431,11 @@ class MainWindow(QMainWindow):
         right_panel.addLayout(bottom_layout)
         passwords_layout.addLayout(right_panel, 3)
         self.tabs.addTab(passwords_tab, "Passwords")
-        
+
         # --- Notes Tab ---
         notes_tab = QWidget()
         notes_layout = QHBoxLayout(notes_tab)
-        
+
         notes_left_panel = QVBoxLayout()
         notes_left_header = QHBoxLayout()
         notes_list_label = QLabel("Notes")
@@ -423,22 +447,22 @@ class MainWindow(QMainWindow):
         add_note_btn.clicked.connect(self._add_note_entry)
         notes_left_header.addWidget(add_note_btn)
         notes_left_panel.addLayout(notes_left_header)
-        
+
         self.search_notes = QLineEdit()
         self.search_notes.setPlaceholderText("Search notes...")
         self.search_notes.textChanged.connect(self._filter_lists)
         notes_left_panel.addWidget(self.search_notes)
-        
+
         self.note_list = QListWidget()
         self.note_list.currentItemChanged.connect(self._on_entry_selected)
         notes_left_panel.addWidget(self.note_list)
         notes_layout.addLayout(notes_left_panel, 2)
-        
+
         notes_right_panel = QVBoxLayout()
         notes_details_label = QLabel("Note Details")
         notes_details_label.setFont(QFont("Arial", 14, QFont.Bold))
         notes_right_panel.addWidget(notes_details_label)
-        
+
         notes_details_group = QGroupBox()
         notes_details_layout = QFormLayout()
         self.note_detail_title = QLineEdit()
@@ -447,7 +471,7 @@ class MainWindow(QMainWindow):
         notes_details_layout.addRow("Content:", self.note_detail_content)
         notes_details_group.setLayout(notes_details_layout)
         notes_right_panel.addWidget(notes_details_group)
-        
+
         note_action_layout = QHBoxLayout()
         save_note_btn = QPushButton("Save Note")
         save_note_btn.setObjectName("primaryButton")
@@ -535,38 +559,58 @@ class MainWindow(QMainWindow):
     def _setup_shortcuts(self):
         copy_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.Copy), self)
         copy_shortcut.activated.connect(self._copy_password)
-        
-        new_password_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.New), self)
+
+        new_password_shortcut = QShortcut(
+            QKeySequence(QKeySequence.StandardKey.New), self
+        )
         new_password_shortcut.activated.connect(self._add_password_entry)
-        
-        new_note_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_N), self)
+
+        new_note_shortcut = QShortcut(
+            QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_N), self
+        )
         new_note_shortcut.activated.connect(self._add_note_entry)
-        
-        edit_password_shortcut = QShortcut(QKeySequence(QKeyCombination(Qt.ControlModifier, Qt.Key_E)), self)
+
+        edit_password_shortcut = QShortcut(
+            QKeySequence(QKeyCombination(Qt.ControlModifier, Qt.Key_E)), self
+        )
         edit_password_shortcut.activated.connect(self._edit_password_entry)
-        
-        save_note_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_E), self)
+
+        save_note_shortcut = QShortcut(
+            QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_E), self
+        )
         save_note_shortcut.activated.connect(self._save_note_entry)
-        
-        delete_password_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.Delete), self)
+
+        delete_password_shortcut = QShortcut(
+            QKeySequence(QKeySequence.StandardKey.Delete), self
+        )
         delete_password_shortcut.activated.connect(self._delete_password_entry)
-        
-        delete_note_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Delete), self)
+
+        delete_note_shortcut = QShortcut(
+            QKeySequence(Qt.ControlModifier | Qt.ShiftModifier | Qt.Key_Delete), self
+        )
         delete_note_shortcut.activated.connect(self._delete_note_entry)
-        
+
         lock_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_L), self)
         lock_shortcut.activated.connect(self._lock_vault)
 
         # Command Palette (Ctrl+K)
-        command_palette_shortcut = QShortcut(QKeySequence(Qt.ControlModifier | Qt.Key_K), self)
+        command_palette_shortcut = QShortcut(
+            QKeySequence(Qt.ControlModifier | Qt.Key_K), self
+        )
         command_palette_shortcut.activated.connect(self._show_command_palette)
 
         focus_shortcut = QShortcut(QKeySequence(QKeySequence.StandardKey.Find), self)
-        focus_shortcut.activated.connect(lambda: self.search_passwords.setFocus() if self.tabs.currentIndex() == 0 else self.search_notes.setFocus())
+        focus_shortcut.activated.connect(
+            lambda: (
+                self.search_passwords.setFocus()
+                if self.tabs.currentIndex() == 0
+                else self.search_notes.setFocus()
+            )
+        )
 
     def _clear_clipboard(self):
         try:
-            pyperclip.copy('')
+            pyperclip.copy("")
             self.statusBar().showMessage("Clipboard cleared for security", 2000)
         except Exception as e:
             logger.warning(f"Failed to clear clipboard: {e}")
@@ -587,25 +631,29 @@ class MainWindow(QMainWindow):
 
         now = datetime.now()
         entry = {
-            'title': title,
-            'text': text,  # Store full password for reuse
-            'display_text': text[:50] + '...' if len(text) > 50 else text,
-            'timestamp': now.strftime('%H:%M:%S')
+            "title": title,
+            "text": text,  # Store full password for reuse
+            "display_text": text[:50] + "..." if len(text) > 50 else text,
+            "timestamp": now.strftime("%H:%M:%S"),
         }
 
         self.clipboard_history.insert(0, entry)
 
         if len(self.clipboard_history) > self.max_clipboard_history:
-            self.clipboard_history = self.clipboard_history[:self.max_clipboard_history]
+            self.clipboard_history = self.clipboard_history[
+                : self.max_clipboard_history
+            ]
 
         self._refresh_clipboard_history()
 
     def _refresh_clipboard_history(self):
         self.clipboard_history_list.clear()
         for entry in self.clipboard_history:
-            display_text = f"[{entry['timestamp']}] {entry['title']}: {entry['display_text']}"
+            display_text = (
+                f"[{entry['timestamp']}] {entry['title']}: {entry['display_text']}"
+            )
             item = QListWidgetItem(display_text)
-            item.setData(Qt.UserRole, entry['text'])  # Store full password for copying
+            item.setData(Qt.UserRole, entry["text"])  # Store full password for copying
             self.clipboard_history_list.addItem(item)
 
     def _on_clipboard_history_double_click(self, item):
@@ -613,11 +661,11 @@ class MainWindow(QMainWindow):
         if password_text:
             # Encrypt before copying to clipboard (with error handling)
             if self._safe_clipboard_copy(password_text, encrypted=True):
-                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                timeout_ms = self.settings["clipboard_clear_seconds"] * 1000
                 self.clipboard_timer.start(timeout_ms)
                 self.statusBar().showMessage(
                     f"Copied from history (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                    2000
+                    2000,
                 )
 
     def _show_welcome(self):
@@ -625,12 +673,12 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             action = dialog.result_action
             path = dialog.vault_path
-            
-            if action == 'create':
+
+            if action == "create":
                 self._create_vault(path)
-            elif action == 'import':
+            elif action == "import":
                 self._import_vault(path)
-            elif action == 'open':
+            elif action == "open":
                 self._open_vault(path)
         else:
             sys.exit(0)
@@ -660,11 +708,14 @@ class MainWindow(QMainWindow):
         password_dialog = MasterPasswordDialog(parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             target_path, _ = QFileDialog.getSaveFileName(
-                self, "Save Imported Vault As", "", "Vault Files (*.vault);;All Files (*)"
+                self,
+                "Save Imported Vault As",
+                "",
+                "Vault Files (*.vault);;All Files (*)",
             )
             if target_path:
-                if not target_path.endswith('.vault'):
-                    target_path += '.vault'
+                if not target_path.endswith(".vault"):
+                    target_path += ".vault"
                 try:
                     self.vault_data = vault.import_encrypted(
                         source_path, target_path, password_dialog.password
@@ -674,7 +725,9 @@ class MainWindow(QMainWindow):
                     self.master_password = password_dialog.password
                     self._refresh_lists()
                     logger.info(f"Vault imported successfully to: {target_path}")
-                    QMessageBox.information(self, "Success", "Vault imported successfully!")
+                    QMessageBox.information(
+                        self, "Success", "Vault imported successfully!"
+                    )
                 except vault.VaultAuthenticationError:
                     logger.warning("Vault import failed: Incorrect master password")
                     QMessageBox.critical(self, "Error", "Incorrect master password.")
@@ -700,16 +753,21 @@ class MainWindow(QMainWindow):
                 self.vault_path = path
                 self.master_password = password_dialog.password
                 self._refresh_lists()
-                logger.info(f"Vault opened successfully with {len(self.vault_data['entries'])} entries")
+                logger.info(
+                    f"Vault opened successfully with {len(self.vault_data['entries'])} entries"
+                )
             except vault.VaultAuthenticationError:
                 logger.warning("Vault open failed: Incorrect master password")
                 QMessageBox.critical(self, "Error", "Incorrect master password.")
                 self._show_welcome()
             except vault.VaultIntegrityError as e:
                 logger.error(f"Vault integrity check failed: {e}")
-                QMessageBox.critical(self, "Integrity Error",
+                QMessageBox.critical(
+                    self,
+                    "Integrity Error",
                     "Vault integrity check failed. The file may be corrupted or tampered with.\n\n"
-                    "Do NOT use this vault. Restore from a backup if available.")
+                    "Do NOT use this vault. Restore from a backup if available.",
+                )
                 self._show_welcome()
             except Exception as e:
                 logger.error(f"Failed to open vault: {e}", exc_info=True)
@@ -721,62 +779,70 @@ class MainWindow(QMainWindow):
 
     def _get_sort_key(self, entry: dict):
         """Get sort key based on current sort mode."""
-        sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+        sort_mode = self.sort_combo.currentIndex() if hasattr(self, "sort_combo") else 0
 
         # Always put pinned entries first
-        pinned_priority = not entry.get('pinned', False)
+        pinned_priority = not entry.get("pinned", False)
 
         if sort_mode == 0:  # Alphabetical (A-Z)
-            return (pinned_priority, entry['title'].lower())
+            return (pinned_priority, entry["title"].lower())
         elif sort_mode == 1:  # Alphabetical (Z-A)
-            return (pinned_priority, entry['title'].lower()), True  # Reverse flag
+            return (pinned_priority, entry["title"].lower()), True  # Reverse flag
         elif sort_mode == 2:  # Date Created (Newest)
-            return (pinned_priority, entry.get('created_at', '')), True
+            return (pinned_priority, entry.get("created_at", "")), True
         elif sort_mode == 3:  # Date Created (Oldest)
-            return (pinned_priority, entry.get('created_at', ''))
+            return (pinned_priority, entry.get("created_at", ""))
         elif sort_mode == 4:  # Date Modified (Newest)
-            return (pinned_priority, entry.get('updated_at', '')), True
+            return (pinned_priority, entry.get("updated_at", "")), True
         elif sort_mode == 5:  # Date Modified (Oldest)
-            return (pinned_priority, entry.get('updated_at', ''))
+            return (pinned_priority, entry.get("updated_at", ""))
         else:
-            return (pinned_priority, entry['title'].lower())
+            return (pinned_priority, entry["title"].lower())
 
     def _refresh_lists(self):
         self.entry_list.clear()
         self.note_list.clear()
         if self.vault_data:
             # Get sort mode and determine if reverse is needed
-            sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+            sort_mode = (
+                self.sort_combo.currentIndex() if hasattr(self, "sort_combo") else 0
+            )
             reverse = sort_mode in [1, 2, 4]  # Z-A, Newest Created, Newest Modified
 
             # Sort entries based on selected mode
             entries = sorted(
-                self.vault_data['entries'],
-                key=lambda e: (not e.get('pinned', False),
-                              e['title'].lower() if sort_mode <= 1 else e.get('created_at' if sort_mode <= 3 else 'updated_at', '')),
-                reverse=reverse
+                self.vault_data["entries"],
+                key=lambda e: (
+                    not e.get("pinned", False),
+                    (
+                        e["title"].lower()
+                        if sort_mode <= 1
+                        else e.get("created_at" if sort_mode <= 3 else "updated_at", "")
+                    ),
+                ),
+                reverse=reverse,
             )
 
             for entry in entries:
                 # Build display text with pin indicator and tags
-                display_text = entry['title']
+                display_text = entry["title"]
 
                 # Add pin indicator
-                if entry.get('pinned', False):
+                if entry.get("pinned", False):
                     display_text = f"📌 {display_text}"
 
                 # Add tags (if any)
-                tags = entry.get('tags', [])
+                tags = entry.get("tags", [])
                 if tags:
-                    tag_text = ', '.join(tags)
+                    tag_text = ", ".join(tags)
                     display_text = f"{display_text} [{tag_text}]"
 
                 item = QListWidgetItem(display_text)
-                item.setData(Qt.UserRole, entry['id'])
+                item.setData(Qt.UserRole, entry["id"])
 
-                if entry.get('type', 'password') == 'password':
+                if entry.get("type", "password") == "password":
                     self.entry_list.addItem(item)
-                elif entry.get('type') == 'note':
+                elif entry.get("type") == "note":
                     self.note_list.addItem(item)
 
         # Populate tag filter with current tags
@@ -786,12 +852,14 @@ class MainWindow(QMainWindow):
 
     def _filter_lists(self):
         # Get filter mode
-        filter_mode = self.filter_combo.currentIndex() if hasattr(self, 'filter_combo') else 0
+        filter_mode = (
+            self.filter_combo.currentIndex() if hasattr(self, "filter_combo") else 0
+        )
         # 0 = All Entries, 1 = Pinned Only, 2 = Unpinned Only
 
         # Get tag filter
         selected_tag = None
-        if hasattr(self, 'tag_filter_combo'):
+        if hasattr(self, "tag_filter_combo"):
             tag_text = self.tag_filter_combo.currentText()
             if tag_text != "All Tags":
                 selected_tag = tag_text
@@ -809,14 +877,14 @@ class MainWindow(QMainWindow):
             # Check pinned filter
             pinned_match = True
             if entry and filter_mode == 1:  # Pinned Only
-                pinned_match = entry.get('pinned', False)
+                pinned_match = entry.get("pinned", False)
             elif entry and filter_mode == 2:  # Unpinned Only
-                pinned_match = not entry.get('pinned', False)
+                pinned_match = not entry.get("pinned", False)
 
             # Check tag filter
             tag_match = True
             if entry and selected_tag:
-                entry_tags = entry.get('tags', [])
+                entry_tags = entry.get("tags", [])
                 tag_match = selected_tag in entry_tags
 
             item.setHidden(not (text_match and pinned_match and tag_match))
@@ -839,28 +907,51 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
+            with open(file_path, "r", newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
                 imported_count = 0
                 for row in reader:
-                    title = row.get('title', '').strip() or row.get('name', '').strip()
-                    username = row.get('username', '').strip()
-                    password = row.get('password', '').strip()
-                    notes = row.get('notes', '').strip() or row.get('note', '').strip()
+                    title = row.get("title", "").strip() or row.get("name", "").strip()
+                    username = row.get("username", "").strip()
+                    password = row.get("password", "").strip()
+                    notes = row.get("notes", "").strip() or row.get("note", "").strip()
 
-                    additional_notes = [f"{k}: {v.strip()}" for k, v in row.items() if k not in ['title', 'name', 'username', 'password', 'notes', 'note'] and v.strip()]
+                    additional_notes = [
+                        f"{k}: {v.strip()}"
+                        for k, v in row.items()
+                        if k
+                        not in [
+                            "title",
+                            "name",
+                            "username",
+                            "password",
+                            "notes",
+                            "note",
+                        ]
+                        and v.strip()
+                    ]
                     if additional_notes:
-                        notes = f"{notes}\n\n" + "\n".join(additional_notes) if notes else "\n".join(additional_notes)
+                        notes = (
+                            f"{notes}\n\n" + "\n".join(additional_notes)
+                            if notes
+                            else "\n".join(additional_notes)
+                        )
 
                     if not title:
-                        QMessageBox.warning(self, "Warning", f"Skipping row due to missing title: {row}")
+                        QMessageBox.warning(
+                            self, "Warning", f"Skipping row due to missing title: {row}"
+                        )
                         continue
 
                     vault.add_entry(self.vault_data, title, username, password, notes)
                     imported_count += 1
                 self._save_vault()
                 self._refresh_lists()
-                QMessageBox.information(self, "Success", f"Successfully imported {imported_count} entries from CSV.")
+                QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Successfully imported {imported_count} entries from CSV.",
+                )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to import CSV: {e}")
 
@@ -868,23 +959,23 @@ class MainWindow(QMainWindow):
         if not current:
             self._clear_details()
             return
-            
+
         entry_id = current.data(Qt.UserRole)
         self.current_entry_id = entry_id
         entry = self._find_entry(entry_id)
-        
+
         if not entry:
             self._clear_details()
             return
 
-        if entry.get('type', 'password') == 'password':
-            self.detail_title.setText(entry['title'])
-            self.detail_username.setText(entry.get('username', '-'))
+        if entry.get("type", "password") == "password":
+            self.detail_title.setText(entry["title"])
+            self.detail_username.setText(entry.get("username", "-"))
             self.detail_password.setText("••••••••")
-            self.detail_notes.setText(entry.get('notes', '-'))
-        elif entry.get('type') == 'note':
-            self.note_detail_title.setText(entry['title'])
-            self.note_detail_content.setText(entry.get('notes', ''))
+            self.detail_notes.setText(entry.get("notes", "-"))
+        elif entry.get("type") == "note":
+            self.note_detail_title.setText(entry["title"])
+            self.note_detail_content.setText(entry.get("notes", ""))
 
     def _clear_details(self):
         self.current_entry_id = None
@@ -899,8 +990,8 @@ class MainWindow(QMainWindow):
 
     def _find_entry(self, entry_id: str) -> Optional[vault.Entry]:
         if self.vault_data:
-            for entry in self.vault_data['entries']:
-                if entry['id'] == entry_id:
+            for entry in self.vault_data["entries"]:
+                if entry["id"] == entry_id:
                     return entry
         return None
 
@@ -910,8 +1001,8 @@ class MainWindow(QMainWindow):
             return []
 
         all_tags = set()
-        for entry in self.vault_data['entries']:
-            tags = entry.get('tags', [])
+        for entry in self.vault_data["entries"]:
+            tags = entry.get("tags", [])
             if tags:
                 all_tags.update(tags)
 
@@ -919,7 +1010,7 @@ class MainWindow(QMainWindow):
 
     def _populate_tag_filter(self):
         """Populate the tag filter dropdown with all available tags."""
-        if not hasattr(self, 'tag_filter_combo'):
+        if not hasattr(self, "tag_filter_combo"):
             return
 
         # Save current selection
@@ -937,7 +1028,7 @@ class MainWindow(QMainWindow):
         index = self.tag_filter_combo.findText(current_tag)
         if index >= 0:
             self.tag_filter_combo.setCurrentIndex(index)
-    
+
     def _add_password_entry(self):
         all_tags = self._get_all_tags()
         dialog = EntryDialog(settings=self.settings, all_tags=all_tags, parent=self)
@@ -945,31 +1036,33 @@ class MainWindow(QMainWindow):
             data = dialog.result_data
             vault.add_entry(
                 self.vault_data,
-                data['title'],
-                data['username'],
-                data['password'],
-                data['notes'],
-                entry_type='password',
-                tags=data.get('tags', []),
-                pinned=data.get('pinned', False)
+                data["title"],
+                data["username"],
+                data["password"],
+                data["notes"],
+                entry_type="password",
+                tags=data.get("tags", []),
+                pinned=data.get("pinned", False),
             )
             self._save_vault()
             self._refresh_lists()
 
     def _edit_password_entry(self):
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select a password entry to edit.")
+            QMessageBox.warning(
+                self, "Warning", "Please select a password entry to edit."
+            )
             return
 
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type', 'password') == 'password':
+        if entry and entry.get("type", "password") == "password":
             all_tags = self._get_all_tags()
-            dialog = EntryDialog(entry_data=entry, settings=self.settings, all_tags=all_tags, parent=self)
+            dialog = EntryDialog(
+                entry_data=entry, settings=self.settings, all_tags=all_tags, parent=self
+            )
             if dialog.exec() == QDialog.Accepted:
                 data = dialog.result_data
-                vault.update_entry(
-                    self.vault_data, self.current_entry_id, **data
-                )
+                vault.update_entry(self.vault_data, self.current_entry_id, **data)
                 self._save_vault()
                 self._refresh_lists()
                 for i in range(self.entry_list.count()):
@@ -980,14 +1073,18 @@ class MainWindow(QMainWindow):
 
     def _delete_password_entry(self):
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select a password entry to delete.")
+            QMessageBox.warning(
+                self, "Warning", "Please select a password entry to delete."
+            )
             return
-        
+
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type', 'password') == 'password':
+        if entry and entry.get("type", "password") == "password":
             reply = QMessageBox.question(
-                self, "Confirm Delete", "Are you sure you want to delete this password entry?",
-                QMessageBox.Yes | QMessageBox.No
+                self,
+                "Confirm Delete",
+                "Are you sure you want to delete this password entry?",
+                QMessageBox.Yes | QMessageBox.No,
             )
             if reply == QMessageBox.Yes:
                 vault.delete_entry(self.vault_data, self.current_entry_id)
@@ -1013,11 +1110,13 @@ class MainWindow(QMainWindow):
 
     def _save_note_entry(self):
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select a note or add a new one.")
+            QMessageBox.warning(
+                self, "Warning", "Please select a note or add a new one."
+            )
             return
 
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type') == 'note':
+        if entry and entry.get("type") == "note":
             title = self.note_detail_title.text().strip()
             content = self.note_detail_content.toPlainText().strip()
 
@@ -1036,48 +1135,53 @@ class MainWindow(QMainWindow):
             return
 
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type') == 'note':
+        if entry and entry.get("type") == "note":
             reply = QMessageBox.question(
-                self, "Confirm Delete", "Are you sure you want to delete this note entry?",
-                QMessageBox.Yes | QMessageBox.No
+                self,
+                "Confirm Delete",
+                "Are you sure you want to delete this note entry?",
+                QMessageBox.Yes | QMessageBox.No,
             )
             if reply == QMessageBox.Yes:
                 vault.delete_entry(self.vault_data, self.current_entry_id)
                 self._save_vault()
                 self._refresh_lists()
                 self._clear_details()
-    
+
     def _copy_password(self):
         if not self.current_entry_id:
-            QMessageBox.warning(self, "Warning", "Please select an entry to copy password.")
+            QMessageBox.warning(
+                self, "Warning", "Please select an entry to copy password."
+            )
             return
 
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type', 'password') == 'password':
-            password_text = entry['password']
+        if entry and entry.get("type", "password") == "password":
+            password_text = entry["password"]
             # Use safe clipboard copy with error handling
             if self._safe_clipboard_copy(password_text, encrypted=True):
-                self._add_to_clipboard_history(entry['title'], password_text)
-                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                self._add_to_clipboard_history(entry["title"], password_text)
+                timeout_ms = self.settings["clipboard_clear_seconds"] * 1000
                 self.clipboard_timer.start(timeout_ms)
+                clear_time = self.settings["clipboard_clear_seconds"]
                 self.statusBar().showMessage(
-                    f"Password copied to clipboard (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                    3000
+                    f"Password copied to clipboard (encrypted)! Will auto-clear in {clear_time}s",
+                    3000,
                 )
-    
+
     def _export_vault(self):
         path, _ = QFileDialog.getSaveFileName(
             self, "Export Vault", "", "Encrypted Files (*.encrypted);;All Files (*)"
         )
         if path:
-            if not path.endswith('.encrypted'):
-                path += '.encrypted'
+            if not path.endswith(".encrypted"):
+                path += ".encrypted"
             try:
                 vault.export_encrypted(self.vault_path, path, self.master_password)
                 QMessageBox.information(self, "Success", "Vault exported successfully!")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export vault: {e}")
-    
+
     def _lock_vault(self):
         logger.info("Locking vault")
         self.vault_data = None
@@ -1094,7 +1198,9 @@ class MainWindow(QMainWindow):
     def _open_tag_manager(self):
         """Open the tag manager dialog."""
         if not self.vault_data:
-            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            QMessageBox.warning(
+                self, "No Vault", "Please open or create a vault first."
+            )
             return
 
         dialog = TagManagerDialog(self.vault_data, self)
@@ -1111,8 +1217,8 @@ class MainWindow(QMainWindow):
         if dialog.exec() == QDialog.Accepted:
             # Reload settings
             self.settings = load_settings()
-            self.auto_lock_minutes = self.settings['auto_lock_minutes']
-            self.max_clipboard_history = self.settings['clipboard_history_size']
+            self.auto_lock_minutes = self.settings["auto_lock_minutes"]
+            self.max_clipboard_history = self.settings["clipboard_history_size"]
 
             # Restart auto-lock timer with new timeout
             if self.vault_data and self.auto_lock_minutes > 0:
@@ -1123,7 +1229,9 @@ class MainWindow(QMainWindow):
     def _run_security_audit(self):
         """Run security audit on vault."""
         if not self.vault_data:
-            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            QMessageBox.warning(
+                self, "No Vault", "Please open or create a vault first."
+            )
             return
 
         dialog = SecurityAuditDialog(self.vault_data, self)
@@ -1132,7 +1240,9 @@ class MainWindow(QMainWindow):
     def _open_backup_manager(self):
         """Open the backup manager dialog."""
         if not self.vault_path:
-            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            QMessageBox.warning(
+                self, "No Vault", "Please open or create a vault first."
+            )
             return
 
         dialog = BackupManagerDialog(self.vault_path, self.settings, self)
@@ -1146,7 +1256,7 @@ class MainWindow(QMainWindow):
                 "Reload Vault?",
                 "Would you like to reload the vault to see the restored data?",
                 QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.Yes
+                QMessageBox.Yes,
             )
             if reply == QMessageBox.Yes:
                 self._lock_vault()
@@ -1154,7 +1264,9 @@ class MainWindow(QMainWindow):
     def _open_import_wizard(self):
         """Open the import wizard dialog."""
         if not self.vault_data or not self.vault_path:
-            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            QMessageBox.warning(
+                self, "No Vault", "Please open or create a vault first."
+            )
             return
 
         dialog = ImportWizardDialog(self.vault_data, self)
@@ -1167,7 +1279,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "Import Complete",
-                "Passwords imported successfully! Vault has been saved."
+                "Passwords imported successfully! Vault has been saved.",
             )
 
     def _show_command_palette(self):
@@ -1186,14 +1298,16 @@ class MainWindow(QMainWindow):
             return
 
         entry = self._find_entry(self.current_entry_id)
-        if entry and entry.get('type', 'password') == 'password':
+        if entry and entry.get("type", "password") == "password":
             dialog = PasswordHistoryDialog(entry, self.encrypted_clipboard, self)
             dialog.exec()
 
     def _export_csv(self):
         """Export vault entries to CSV file."""
         if not self.vault_data:
-            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            QMessageBox.warning(
+                self, "No Vault", "Please open or create a vault first."
+            )
             return
 
         # Warning dialog
@@ -1205,7 +1319,7 @@ class MainWindow(QMainWindow):
             "Only export if you understand the security risks and need to transfer data.\n\n"
             "Do you want to continue?",
             QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.No,
         )
 
         if reply == QMessageBox.No:
@@ -1218,30 +1332,32 @@ class MainWindow(QMainWindow):
         if not file_path:
             return
 
-        if not file_path.endswith('.csv'):
-            file_path += '.csv'
+        if not file_path.endswith(".csv"):
+            file_path += ".csv"
 
         try:
-            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-                fieldnames = ['title', 'username', 'password', 'notes', 'type']
+            with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
+                fieldnames = ["title", "username", "password", "notes", "type"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
                 writer.writeheader()
 
-                for entry in self.vault_data['entries']:
-                    writer.writerow({
-                        'title': entry.get('title', ''),
-                        'username': entry.get('username', ''),
-                        'password': entry.get('password', ''),
-                        'notes': entry.get('notes', ''),
-                        'type': entry.get('type', 'password')
-                    })
+                for entry in self.vault_data["entries"]:
+                    writer.writerow(
+                        {
+                            "title": entry.get("title", ""),
+                            "username": entry.get("username", ""),
+                            "password": entry.get("password", ""),
+                            "notes": entry.get("notes", ""),
+                            "type": entry.get("type", "password"),
+                        }
+                    )
 
             QMessageBox.information(
                 self,
                 "Export Successful",
                 f"Exported {len(self.vault_data['entries'])} entries to {file_path}\n\n"
-                "Remember: This file contains PLAINTEXT passwords. Store it securely!"
+                "Remember: This file contains PLAINTEXT passwords. Store it securely!",
             )
 
         except Exception as e:
@@ -1250,6 +1366,7 @@ class MainWindow(QMainWindow):
     def _show_about(self):
         """Show about dialog."""
         from ... import __version__
+
         QMessageBox.about(
             self,
             "About pwick",
@@ -1258,7 +1375,7 @@ class MainWindow(QMainWindow):
             "<p>Created by orpheus497</p>"
             "<p><b>Your data never leaves your computer.</b></p>"
             "<p>Licensed under the MIT License</p>"
-            "<p><a href='https://github.com/orpheus497/pwick'>github.com/orpheus497/pwick</a></p>"
+            "<p><a href='https://github.com/orpheus497/pwick'>github.com/orpheus497/pwick</a></p>",
         )
 
     def _show_shortcuts(self):
@@ -1294,8 +1411,10 @@ def run():
     settings = load_settings()
 
     # Setup logging system
-    log_level = settings.get('log_level', 'INFO')
-    log_max_size = settings.get('log_max_size_mb', 10) * 1024 * 1024  # Convert MB to bytes
+    log_level = settings.get("log_level", "INFO")
+    log_max_size = (
+        settings.get("log_max_size_mb", 10) * 1024 * 1024
+    )  # Convert MB to bytes
     setup_logging(level=log_level, max_bytes=log_max_size)
 
     logger.info("Starting pwick application")
@@ -1304,8 +1423,8 @@ def run():
     app = QApplication(sys.argv)
 
     # Apply theme from settings (with auto-detection support)
-    theme_setting = settings.get('theme', 'dark')
-    if theme_setting == 'auto':
+    theme_setting = settings.get("theme", "dark")
+    if theme_setting == "auto":
         # Auto-detect system theme
         theme = get_auto_theme()
         logger.info(f"Auto-detected system theme: {theme}")

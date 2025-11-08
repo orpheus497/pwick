@@ -7,10 +7,10 @@ Shows a color-coded progress bar and text feedback.
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QProgressBar, QLabel
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPalette, QColor
 
 try:
     import zxcvbn
+
     ZXCVBN_AVAILABLE = True
 except ImportError:
     ZXCVBN_AVAILABLE = False
@@ -32,10 +32,10 @@ class PasswordStrengthWidget(QWidget):
     # Strength levels and their colors
     STRENGTH_LEVELS = {
         0: ("Very Weak", "#d32f2f"),  # Red
-        1: ("Weak", "#f57c00"),       # Orange
-        2: ("Fair", "#fbc02d"),       # Yellow
-        3: ("Good", "#7cb342"),       # Light green
-        4: ("Strong", "#388e3c"),     # Dark green
+        1: ("Weak", "#f57c00"),  # Orange
+        2: ("Fair", "#fbc02d"),  # Yellow
+        3: ("Good", "#7cb342"),  # Light green
+        4: ("Strong", "#388e3c"),  # Dark green
     }
 
     def __init__(self, parent=None):
@@ -101,7 +101,7 @@ class PasswordStrengthWidget(QWidget):
             return 0
 
         result = zxcvbn.zxcvbn(password)
-        return result['score']
+        return result["score"]
 
     def update_password(self, password: str):
         """
@@ -140,7 +140,8 @@ class PasswordStrengthWidget(QWidget):
         _, color = self.STRENGTH_LEVELS[score]
 
         # Update progress bar color using stylesheet
-        self.progress_bar.setStyleSheet(f"""
+        self.progress_bar.setStyleSheet(
+            f"""
             QProgressBar {{
                 border: 1px solid #404040;
                 border-radius: 3px;
@@ -150,10 +151,13 @@ class PasswordStrengthWidget(QWidget):
                 background-color: {color};
                 border-radius: 2px;
             }}
-        """)
+        """
+        )
 
         # Update label color
-        self.strength_label.setStyleSheet(f"color: {color}; font-size: 10px; font-weight: bold;")
+        self.strength_label.setStyleSheet(
+            f"color: {color}; font-size: 10px; font-weight: bold;"
+        )
 
     def get_current_score(self) -> int:
         """

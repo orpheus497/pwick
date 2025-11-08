@@ -18,11 +18,11 @@ from .lastpass_importer import import_from_lastpass_csv
 from .onepassword_importer import import_from_onepassword_csv
 
 __all__ = [
-    'import_from_csv',
-    'detect_csv_format',
-    'import_from_keepass_csv',
-    'import_from_bitwarden_json',
-    'import_from_bitwarden_csv',
-    'import_from_lastpass_csv',
-    'import_from_onepassword_csv',
+    "import_from_csv",
+    "detect_csv_format",
+    "import_from_keepass_csv",
+    "import_from_bitwarden_json",
+    "import_from_bitwarden_csv",
+    "import_from_lastpass_csv",
+    "import_from_onepassword_csv",
 ]

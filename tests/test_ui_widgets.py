@@ -14,10 +14,10 @@ import pytest
 import sys
 import os
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
@@ -27,11 +27,13 @@ from pwick.ui.widgets.settings_dialog import SettingsDialog
 from pwick.ui.widgets.password_generator_dialog import PasswordGeneratorDialog
 from pwick.ui.widgets.backup_manager_dialog import BackupManagerDialog
 from pwick.ui.widgets.import_wizard_dialog import ImportWizardDialog
-from pwick.ui.widgets.command_palette_dialog import CommandPaletteDialog, create_command_palette
+from pwick.ui.widgets.command_palette_dialog import (
+    create_command_palette,
+)
 from pwick.ui.widgets.password_history_dialog import PasswordHistoryDialog
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def qapp():
     """Create QApplication instance for tests."""
     app = QApplication.instance()
@@ -44,29 +46,29 @@ def qapp():
 def mock_settings():
     """Mock settings dictionary."""
     return {
-        'auto_lock_minutes': 5,
-        'clipboard_clear_seconds': 30,
-        'clipboard_history_size': 30,
-        'password_generator_length': 20,
-        'password_generator_use_uppercase': True,
-        'password_generator_use_lowercase': True,
-        'password_generator_use_digits': True,
-        'password_generator_use_punctuation': True,
-        'password_history_limit': 5,
-        'password_expiration_days': 90,
-        'password_expiration_warning_days': 14,
-        'auto_backup_enabled': False,
-        'auto_backup_location': '',
-        'auto_backup_frequency': 'weekly',
-        'auto_backup_keep_count': 5,
-        'theme': 'dark',
-        'log_level': 'INFO',
-        'log_max_size_mb': 10,
-        'entry_sort_order': 'alphabetical',
-        'vault_argon2_time_cost': 3,
-        'vault_argon2_memory_cost': 65536,
-        'vault_argon2_parallelism': 1,
-        'vault_argon2_hash_len': 32,
+        "auto_lock_minutes": 5,
+        "clipboard_clear_seconds": 30,
+        "clipboard_history_size": 30,
+        "password_generator_length": 20,
+        "password_generator_use_uppercase": True,
+        "password_generator_use_lowercase": True,
+        "password_generator_use_digits": True,
+        "password_generator_use_punctuation": True,
+        "password_history_limit": 5,
+        "password_expiration_days": 90,
+        "password_expiration_warning_days": 14,
+        "auto_backup_enabled": False,
+        "auto_backup_location": "",
+        "auto_backup_frequency": "weekly",
+        "auto_backup_keep_count": 5,
+        "theme": "dark",
+        "log_level": "INFO",
+        "log_max_size_mb": 10,
+        "entry_sort_order": "alphabetical",
+        "vault_argon2_time_cost": 3,
+        "vault_argon2_memory_cost": 65536,
+        "vault_argon2_parallelism": 1,
+        "vault_argon2_hash_len": 32,
     }
 
 
@@ -75,7 +77,9 @@ class TestSettingsDialog:
 
     def test_settings_dialog_initialization(self, qapp, mock_settings):
         """Test that settings dialog initializes correctly."""
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
             dialog = SettingsDialog()
             assert dialog.windowTitle() == "Settings"
             assert dialog.isModal()
@@ -83,7 +87,9 @@ class TestSettingsDialog:
 
     def test_theme_options_include_auto(self, qapp, mock_settings):
         """Test that theme dropdown includes Auto option."""
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
             dialog = SettingsDialog()
             theme_combo = dialog.theme_combo
             items = [theme_combo.itemText(i) for i in range(theme_combo.count())]
@@ -93,7 +99,9 @@ class TestSettingsDialog:
 
     def test_settings_load_from_ui(self, qapp, mock_settings):
         """Test loading settings from UI controls."""
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
             dialog = SettingsDialog()
             assert dialog.autolock_spin.value() == 5
             assert dialog.clipboard_clear_spin.value() == 30
@@ -101,26 +109,36 @@ class TestSettingsDialog:
 
     def test_theme_auto_setting(self, qapp, mock_settings):
         """Test that Auto theme is correctly loaded and saved."""
-        mock_settings['theme'] = 'auto'
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
+        mock_settings["theme"] = "auto"
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
             dialog = SettingsDialog()
             assert dialog.theme_combo.currentIndex() == 2  # Auto is third option
 
     def test_reset_to_defaults(self, qapp, mock_settings, qtbot):
         """Test reset to defaults functionality."""
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
-            with patch('pwick.ui.widgets.settings_dialog.get_default_settings', return_value=mock_settings):
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
+            with patch(
+                "pwick.ui.widgets.settings_dialog.get_default_settings",
+                return_value=mock_settings,
+            ):
                 dialog = SettingsDialog()
 
                 # Change a value
                 dialog.autolock_spin.setValue(10)
 
                 # Simulate clicking reset button (with confirmation)
-                with patch('PySide6.QtWidgets.QMessageBox.question', return_value=16384):  # Yes
-                    reset_btn = None
+                with patch(
+                    "PySide6.QtWidgets.QMessageBox.question", return_value=16384
+                ):  # Yes
                     for child in dialog.findChildren(type(dialog)):
-                        if hasattr(child, 'text') and child.text() == "Reset to Defaults":
-                            reset_btn = child
+                        if (
+                            hasattr(child, "text")
+                            and child.text() == "Reset to Defaults"
+                        ):
                             break
 
                     # Since we can't easily click, just call the method directly
@@ -163,7 +181,7 @@ class TestPasswordGeneratorDialog:
         dialog.punctuation_check.setChecked(False)
 
         # Try to generate - should show error
-        with patch('PySide6.QtWidgets.QMessageBox.warning') as mock_warning:
+        with patch("PySide6.QtWidgets.QMessageBox.warning") as mock_warning:
             dialog._generate_password()
             mock_warning.assert_called_once()
 
@@ -190,7 +208,10 @@ class TestBackupManagerDialog:
         (backup_dir / "test.vault.backup_20250101_120000").touch()
         (backup_dir / "test.vault.backup_20250102_120000").touch()
 
-        with patch('pwick.ui.widgets.backup_manager_dialog.get_backup_dir', return_value=str(backup_dir)):
+        with patch(
+            "pwick.ui.widgets.backup_manager_dialog.get_backup_dir",
+            return_value=str(backup_dir),
+        ):
             dialog = BackupManagerDialog(vault_path, mock_settings)
             # Backups should be listed
             assert dialog.backup_list.count() >= 0  # May be 0 if pattern doesn't match
@@ -212,9 +233,11 @@ class TestImportWizardDialog:
         dialog = ImportWizardDialog(mock_vault)
 
         # Test format detection
-        with patch('pwick.importers.csv_importer.detect_csv_format', return_value='keepass'):
+        with patch(
+            "pwick.importers.csv_importer.detect_csv_format", return_value="keepass"
+        ):
             # Simulate file selection
-            dialog.file_path_edit.setText('/path/to/file.csv')
+            dialog.file_path_edit.setText("/path/to/file.csv")
             # Format should be detected
             # Note: Actual detection happens in _browse_file which we can't easily test
 
@@ -253,8 +276,11 @@ class TestCommandPaletteDialog:
         dialog._filter_commands()
 
         # Should have fewer commands visible
-        visible_count = sum(1 for i in range(dialog.command_list.count())
-                          if not dialog.command_list.item(i).isHidden())
+        visible_count = sum(
+            1
+            for i in range(dialog.command_list.count())
+            if not dialog.command_list.item(i).isHidden()
+        )
         assert visible_count <= initial_count
 
     def test_keyboard_navigation(self, qapp, qtbot):
@@ -278,11 +304,11 @@ class TestPasswordHistoryDialog:
     def test_password_history_initialization(self, qapp):
         """Test that password history dialog initializes correctly."""
         entry = {
-            'title': 'Test Entry',
-            'password_history': [
-                {'password': 'oldpass123', 'changed_at': '2025-01-01T12:00:00Z'},
-                {'password': 'oldpass456', 'changed_at': '2025-01-02T12:00:00Z'},
-            ]
+            "title": "Test Entry",
+            "password_history": [
+                {"password": "oldpass123", "changed_at": "2025-01-01T12:00:00Z"},
+                {"password": "oldpass456", "changed_at": "2025-01-02T12:00:00Z"},
+            ],
         }
         mock_clipboard = Mock()
 
@@ -293,10 +319,7 @@ class TestPasswordHistoryDialog:
 
     def test_empty_password_history(self, qapp):
         """Test dialog with empty password history."""
-        entry = {
-            'title': 'Test Entry',
-            'password_history': []
-        }
+        entry = {"title": "Test Entry", "password_history": []}
         mock_clipboard = Mock()
 
         dialog = PasswordHistoryDialog(entry, mock_clipboard)
@@ -307,18 +330,18 @@ class TestPasswordHistoryDialog:
     def test_password_masking(self, qapp):
         """Test that passwords are masked in the list."""
         entry = {
-            'title': 'Test Entry',
-            'password_history': [
-                {'password': 'secretpass', 'changed_at': '2025-01-01T12:00:00Z'},
-            ]
+            "title": "Test Entry",
+            "password_history": [
+                {"password": "secretpass", "changed_at": "2025-01-01T12:00:00Z"},
+            ],
         }
         mock_clipboard = Mock()
 
         dialog = PasswordHistoryDialog(entry, mock_clipboard)
         # Password should be masked in display
         item_text = dialog.history_list.item(0).text()
-        assert 'secretpass' not in item_text
-        assert '•' in item_text  # Masked with bullets
+        assert "secretpass" not in item_text
+        assert "•" in item_text  # Masked with bullets
 
 
 class TestUIIntegration:
@@ -327,7 +350,9 @@ class TestUIIntegration:
     def test_all_dialogs_can_be_created(self, qapp, mock_settings, tmp_path):
         """Test that all dialogs can be instantiated without errors."""
         # Settings dialog
-        with patch('pwick.ui.widgets.settings_dialog.load_settings', return_value=mock_settings):
+        with patch(
+            "pwick.ui.widgets.settings_dialog.load_settings", return_value=mock_settings
+        ):
             settings_dlg = SettingsDialog()
             assert settings_dlg is not None
 
@@ -352,11 +377,11 @@ class TestUIIntegration:
         assert palette_dlg is not None
 
         # Password history dialog
-        entry = {'title': 'Test', 'password_history': []}
+        entry = {"title": "Test", "password_history": []}
         mock_clipboard = Mock()
         history_dlg = PasswordHistoryDialog(entry, mock_clipboard)
         assert history_dlg is not None
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

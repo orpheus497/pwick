@@ -6,14 +6,12 @@ and restoring from backup files. Supports scheduled automatic backups to prevent
 data loss from user forgetfulness or system failures.
 """
 
-import os
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Tuple
 import logging
 
-from . import vault
 from .config import load_settings
 
 logger = logging.getLogger(__name__)
@@ -34,7 +32,7 @@ def get_backup_filename(vault_path: str) -> str:
         'myvault_2025-11-08_14-30-00.vault'
     """
     vault_file = Path(vault_path)
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     return f"{vault_file.stem}_{timestamp}{vault_file.suffix}"
 
 
@@ -82,7 +80,9 @@ def create_backup(vault_path: str, backup_dir: Optional[str] = None) -> Optional
         return None
 
 
-def list_backups(vault_path: str, backup_dir: Optional[str] = None) -> List[Tuple[str, datetime]]:
+def list_backups(
+    vault_path: str, backup_dir: Optional[str] = None
+) -> List[Tuple[str, datetime]]:
     """
     List all backups for a specific vault.
 
@@ -130,8 +130,9 @@ def list_backups(vault_path: str, backup_dir: Optional[str] = None) -> List[Tupl
         return []
 
 
-def cleanup_old_backups(vault_path: str, backup_dir: Optional[str] = None,
-                       keep_count: int = 5) -> int:
+def cleanup_old_backups(
+    vault_path: str, backup_dir: Optional[str] = None, keep_count: int = 5
+) -> int:
     """
     Remove old backup files, keeping only the most recent N backups.
 
@@ -207,8 +208,9 @@ def restore_backup(backup_path: str, target_path: str) -> bool:
         return False
 
 
-def should_create_backup(vault_path: str, frequency: str,
-                        last_backup_time: Optional[datetime] = None) -> bool:
+def should_create_backup(
+    vault_path: str, frequency: str, last_backup_time: Optional[datetime] = None
+) -> bool:
     """
     Determine if a backup should be created based on frequency settings.
 
@@ -296,13 +298,12 @@ def auto_backup(vault_path: str, settings: Optional[dict] = None) -> Optional[st
             settings = load_settings()
 
         # Check if auto-backup is enabled
-        if not settings.get('auto_backup_enabled', False):
+        if not settings.get("auto_backup_enabled", False):
             return None
 
         # Get backup settings
-        backup_location = settings.get('auto_backup_location', '')
-        frequency = settings.get('auto_backup_frequency', 'weekly')
-        keep_count = settings.get('auto_backup_keep_count', 5)
+        backup_location = settings.get("auto_backup_location", "")
+        keep_count = settings.get("auto_backup_keep_count", 5)
 
         # Use custom backup location if specified
         backup_dir = backup_location if backup_location else None
@@ -313,7 +314,9 @@ def auto_backup(vault_path: str, settings: Optional[dict] = None) -> Optional[st
         if backup_path:
             # Cleanup old backups
             deleted = cleanup_old_backups(vault_path, backup_dir, keep_count)
-            logger.info(f"Auto-backup completed: {backup_path} (deleted {deleted} old backups)")
+            logger.info(
+                f"Auto-backup completed: {backup_path} (deleted {deleted} old backups)"
+            )
 
         return backup_path
 

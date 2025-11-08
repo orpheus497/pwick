@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import csv
 import json
-from typing import List
 
 from .. import vault
 from .csv_importer import ImportResult
@@ -28,36 +27,36 @@ def import_from_bitwarden_json(vault_obj: vault.Vault, file_path: str) -> Import
     result = ImportResult()
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        items = data.get('items', [])
+        items = data.get("items", [])
 
         for idx, item in enumerate(items, start=1):
             try:
                 # Skip non-login items
-                if item.get('type') != 1:  # 1 = login type in Bitwarden
+                if item.get("type") != 1:  # 1 = login type in Bitwarden
                     continue
 
-                name = item.get('name', '')
-                login = item.get('login', {})
-                notes = item.get('notes', '')
-                folder = item.get('folderName') or item.get('folder')
+                name = item.get("name", "")
+                login = item.get("login", {})
+                notes = item.get("notes", "")
+                folder = item.get("folderName") or item.get("folder")
 
                 if not name:
                     result.add_error(idx, "Missing name")
                     continue
 
-                username = login.get('username', '')
-                password = login.get('password', '')
-                uris = login.get('uris', [])
+                username = login.get("username", "")
+                password = login.get("password", "")
+                uris = login.get("uris", [])
 
                 # Combine URIs into notes
                 full_notes = []
                 if uris:
-                    uri_texts = [uri.get('uri', '') for uri in uris if uri.get('uri')]
+                    uri_texts = [uri.get("uri", "") for uri in uris if uri.get("uri")]
                     if uri_texts:
-                        full_notes.append("URLs:\n" + '\n'.join(uri_texts))
+                        full_notes.append("URLs:\n" + "\n".join(uri_texts))
                 if notes:
                     full_notes.append(notes)
 
@@ -69,9 +68,9 @@ def import_from_bitwarden_json(vault_obj: vault.Vault, file_path: str) -> Import
                     title=name,
                     username=username,
                     password=password,
-                    notes='\n\n'.join(full_notes),
+                    notes="\n\n".join(full_notes),
                     tags=tags,
-                    entry_type='password'
+                    entry_type="password",
                 )
 
                 result.add_success(entry_id)
@@ -102,21 +101,21 @@ def import_from_bitwarden_csv(vault_obj: vault.Vault, file_path: str) -> ImportR
     result = ImportResult()
 
     try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
+        with open(file_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
 
             for row_num, row in enumerate(reader, start=2):
                 try:
                     # Skip non-login items
-                    if row.get('type') != 'login':
+                    if row.get("type") != "login":
                         continue
 
-                    name = row.get('name', '')
-                    username = row.get('login_username', '')
-                    password = row.get('login_password', '')
-                    uri = row.get('login_uri', '')
-                    notes = row.get('notes', '')
-                    folder = row.get('folder', '')
+                    name = row.get("name", "")
+                    username = row.get("login_username", "")
+                    password = row.get("login_password", "")
+                    uri = row.get("login_uri", "")
+                    notes = row.get("notes", "")
+                    folder = row.get("folder", "")
 
                     if not name:
                         result.add_error(row_num, "Missing name")
@@ -137,9 +136,9 @@ def import_from_bitwarden_csv(vault_obj: vault.Vault, file_path: str) -> ImportR
                         title=name,
                         username=username,
                         password=password,
-                        notes='\n\n'.join(full_notes),
+                        notes="\n\n".join(full_notes),
                         tags=tags,
-                        entry_type='password'
+                        entry_type="password",
                     )
 
                     result.add_success(entry_id)

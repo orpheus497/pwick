@@ -4,15 +4,20 @@ pwick.ui.dialogs.tag_manager_dialog - Centralized tag management dialog.
 Allows users to view, rename, merge, and delete tags across all vault entries.
 """
 
-from typing import Optional, Dict
+from typing import Dict
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QListWidget,
-    QListWidgetItem, QPushButton, QMessageBox, QInputDialog
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QMessageBox,
+    QInputDialog,
 )
-
-from ... import vault
 
 
 class TagManagerDialog(QDialog):
@@ -83,8 +88,8 @@ class TagManagerDialog(QDialog):
         self.tag_usage.clear()
 
         # Count tag usage across all entries
-        for entry in self.vault_data['entries']:
-            tags = entry.get('tags', [])
+        for entry in self.vault_data["entries"]:
+            tags = entry.get("tags", [])
             for tag in tags:
                 self.tag_usage[tag] = self.tag_usage.get(tag, 0) + 1
 
@@ -125,10 +130,7 @@ class TagManagerDialog(QDialog):
             return
 
         new_tag, ok = QInputDialog.getText(
-            self,
-            "Rename Tag",
-            f"Rename tag '{old_tag}' to:",
-            text=old_tag
+            self, "Rename Tag", f"Rename tag '{old_tag}' to:", text=old_tag
         )
 
         if not ok or not new_tag or new_tag == old_tag:
@@ -140,14 +142,14 @@ class TagManagerDialog(QDialog):
                 self,
                 "Tag Exists",
                 f"Tag '{new_tag}' already exists. Do you want to merge '{old_tag}' into '{new_tag}'?",
-                QMessageBox.Yes | QMessageBox.No
+                QMessageBox.Yes | QMessageBox.No,
             )
             if reply == QMessageBox.No:
                 return
 
         # Rename tag in all entries
-        for entry in self.vault_data['entries']:
-            tags = entry.get('tags', [])
+        for entry in self.vault_data["entries"]:
+            tags = entry.get("tags", [])
             if old_tag in tags:
                 tags.remove(old_tag)
                 if new_tag not in tags:
@@ -159,7 +161,7 @@ class TagManagerDialog(QDialog):
         QMessageBox.information(
             self,
             "Success",
-            f"Renamed tag '{old_tag}' to '{new_tag}' in {self.tag_usage.get(old_tag, 0)} entries."
+            f"Renamed tag '{old_tag}' to '{new_tag}' in {self.tag_usage.get(old_tag, 0)} entries.",
         )
 
     def _merge_tags(self):
@@ -182,7 +184,7 @@ class TagManagerDialog(QDialog):
             f"Merge {len(tags_to_merge)} tags into:",
             tags_to_merge,
             0,
-            True
+            True,
         )
 
         if not ok or not keep_tag:
@@ -190,13 +192,13 @@ class TagManagerDialog(QDialog):
 
         # Confirm merge
         other_tags = [t for t in tags_to_merge if t != keep_tag]
-        tags_list = ', '.join(f"'{t}'" for t in other_tags)
+        tags_list = ", ".join(f"'{t}'" for t in other_tags)
         reply = QMessageBox.question(
             self,
             "Confirm Merge",
             f"Merge tags {tags_list} into '{keep_tag}'?\n\n"
             f"This will remove the other tags and replace them with '{keep_tag}'.",
-            QMessageBox.Yes | QMessageBox.No
+            QMessageBox.Yes | QMessageBox.No,
         )
 
         if reply == QMessageBox.No:
@@ -204,8 +206,8 @@ class TagManagerDialog(QDialog):
 
         # Merge tags in all entries
         affected_entries = 0
-        for entry in self.vault_data['entries']:
-            tags = entry.get('tags', [])
+        for entry in self.vault_data["entries"]:
+            tags = entry.get("tags", [])
             modified = False
 
             for tag in tags_to_merge:
@@ -225,7 +227,7 @@ class TagManagerDialog(QDialog):
         QMessageBox.information(
             self,
             "Success",
-            f"Merged {len(other_tags)} tags into '{keep_tag}' across {affected_entries} entries."
+            f"Merged {len(other_tags)} tags into '{keep_tag}' across {affected_entries} entries.",
         )
 
     def _delete_tag(self):
@@ -251,10 +253,7 @@ class TagManagerDialog(QDialog):
             message = f"Delete {len(tags_to_delete)} tags from {total_entries} entries?"
 
         reply = QMessageBox.question(
-            self,
-            "Confirm Delete",
-            message,
-            QMessageBox.Yes | QMessageBox.No
+            self, "Confirm Delete", message, QMessageBox.Yes | QMessageBox.No
         )
 
         if reply == QMessageBox.No:
@@ -262,8 +261,8 @@ class TagManagerDialog(QDialog):
 
         # Delete tags from all entries
         affected_entries = 0
-        for entry in self.vault_data['entries']:
-            tags = entry.get('tags', [])
+        for entry in self.vault_data["entries"]:
+            tags = entry.get("tags", [])
             original_count = len(tags)
 
             for tag in tags_to_delete:
@@ -280,11 +279,11 @@ class TagManagerDialog(QDialog):
             QMessageBox.information(
                 self,
                 "Success",
-                f"Deleted tag '{tags_to_delete[0]}' from {affected_entries} entries."
+                f"Deleted tag '{tags_to_delete[0]}' from {affected_entries} entries.",
             )
         else:
             QMessageBox.information(
                 self,
                 "Success",
-                f"Deleted {len(tags_to_delete)} tags from {affected_entries} entries."
+                f"Deleted {len(tags_to_delete)} tags from {affected_entries} entries.",
             )
