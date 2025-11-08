@@ -1,12 +1,12 @@
 # pwick 🛡️
-**Version 2.3.0** - _A simple, secure, and 100% local password manager._
+**Version 2.4.0** - _A simple, secure, and 100% local password manager._
 
 Created by orpheus497.
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Version](https://img.shields.io/badge/version-2.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
 pwick is a cross-platform password manager that provides absolute privacy. Your data never leaves your computer, is never sent to a server, and is always protected by strong encryption.
@@ -109,6 +109,32 @@ python -m pwick
 ```
 
 **Requirements:** Python 3.9+, PySide6, cryptography, argon2-cffi, pyperclip, zxcvbn, tomli/tomli-w (all installed automatically by the setup scripts).
+
+### Linux Additional Requirements
+
+For clipboard functionality on Linux, you need `xclip` or `xsel` installed:
+
+**Debian/Ubuntu:**
+```bash
+sudo apt install xclip
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install xclip
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S xclip
+```
+
+**Alternative (xsel):**
+```bash
+sudo apt install xsel  # Use xsel instead of xclip
+```
+
+**Note:** Users on Wayland-based systems may experience clipboard issues. If you encounter problems, please report them in the GitHub issues.
 
 ---
 

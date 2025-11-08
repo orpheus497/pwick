@@ -3,6 +3,8 @@ pwick - GUI implementation using PySide6.
 Provides a desktop interface for the password manager with a dark theme.
 """
 
+from __future__ import annotations
+
 import sys
 import secrets
 import string
@@ -56,21 +58,28 @@ class EncryptedClipboard:
         """
         Encrypt plaintext and copy to clipboard.
         Format: PWICK_ENC:<base64(nonce||ciphertext||tag)>
+
+        Raises:
+            Exception: If clipboard operation fails
         """
         if not plaintext:
             return
-        
+
         # Generate random nonce
         nonce = secrets.token_bytes(12)
-        
+
         # Encrypt the plaintext
         ciphertext = self.cipher.encrypt(nonce, plaintext.encode('utf-8'), None)
-        
+
         # Combine nonce + ciphertext and encode as base64
         encrypted_blob = base64.b64encode(nonce + ciphertext).decode('ascii')
-        
-        # Copy to clipboard with prefix
-        pyperclip.copy(self.prefix + encrypted_blob)
+
+        # Copy to clipboard with prefix (may raise exception if clipboard unavailable)
+        try:
+            pyperclip.copy(self.prefix + encrypted_blob)
+        except Exception as e:
+            # Re-raise with more context
+            raise Exception(f"Clipboard access failed: {e}") from e
     
     def paste_decrypted(self) -> Optional[str]:
         """
@@ -132,6 +141,38 @@ class MainWindow(QMainWindow):
         self._setup_menu_bar()
         self._setup_shortcuts()
         self._show_welcome()
+
+    def _safe_clipboard_copy(self, text: str, encrypted: bool = True) -> bool:
+        """
+        Safely copy text to clipboard with error handling.
+
+        Args:
+            text: Text to copy
+            encrypted: Whether to encrypt before copying (default: True)
+
+        Returns:
+            True if successful, False if clipboard operation failed
+        """
+        try:
+            if encrypted:
+                self.encrypted_clipboard.copy_encrypted(text)
+            else:
+                pyperclip.copy(text)
+            return True
+        except Exception as e:
+            logger.warning(f"Clipboard operation failed: {e}")
+            QMessageBox.warning(
+                self,
+                "Clipboard Error",
+                f"Could not access system clipboard.\n\n"
+                f"Error: {e}\n\n"
+                f"On Linux, install clipboard support:\n"
+                f"  Ubuntu/Debian: sudo apt install xclip\n"
+                f"  Fedora: sudo dnf install xclip\n"
+                f"  Arch: sudo pacman -S xclip\n\n"
+                f"The password is still available in the entry dialog."
+            )
+            return False
 
     def event(self, event):
         """Reset auto-lock timer on user activity."""
@@ -502,8 +543,12 @@ class MainWindow(QMainWindow):
         focus_shortcut.activated.connect(lambda: self.search_passwords.setFocus() if self.tabs.currentIndex() == 0 else self.search_notes.setFocus())
 
     def _clear_clipboard(self):
-        pyperclip.copy('')
-        self.statusBar().showMessage("Clipboard cleared for security", 2000)
+        try:
+            pyperclip.copy('')
+            self.statusBar().showMessage("Clipboard cleared for security", 2000)
+        except Exception as e:
+            logger.warning(f"Failed to clear clipboard: {e}")
+            # Silently fail for clipboard clear - not critical
 
     def _add_to_clipboard_history(self, title: str, text: str):
         """
@@ -544,14 +589,14 @@ class MainWindow(QMainWindow):
     def _on_clipboard_history_double_click(self, item):
         password_text = item.data(Qt.UserRole)
         if password_text:
-            # Encrypt before copying to clipboard
-            self.encrypted_clipboard.copy_encrypted(password_text)
-            timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
-            self.clipboard_timer.start(timeout_ms)
-            self.statusBar().showMessage(
-                f"Copied from history (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                2000
-            )
+            # Encrypt before copying to clipboard (with error handling)
+            if self._safe_clipboard_copy(password_text, encrypted=True):
+                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                self.clipboard_timer.start(timeout_ms)
+                self.statusBar().showMessage(
+                    f"Copied from history (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
+                    2000
+                )
 
     def _show_welcome(self):
         dialog = WelcomeDialog(self)
@@ -988,14 +1033,15 @@ class MainWindow(QMainWindow):
         entry = self._find_entry(self.current_entry_id)
         if entry and entry.get('type', 'password') == 'password':
             password_text = entry['password']
-            self.encrypted_clipboard.copy_encrypted(password_text)
-            self._add_to_clipboard_history(entry['title'], password_text)
-            timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
-            self.clipboard_timer.start(timeout_ms)
-            self.statusBar().showMessage(
-                f"Password copied to clipboard (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
-                3000
-            )
+            # Use safe clipboard copy with error handling
+            if self._safe_clipboard_copy(password_text, encrypted=True):
+                self._add_to_clipboard_history(entry['title'], password_text)
+                timeout_ms = self.settings['clipboard_clear_seconds'] * 1000
+                self.clipboard_timer.start(timeout_ms)
+                self.statusBar().showMessage(
+                    f"Password copied to clipboard (encrypted)! Will auto-clear in {self.settings['clipboard_clear_seconds']}s",
+                    3000
+                )
     
     def _export_vault(self):
         path, _ = QFileDialog.getSaveFileName(

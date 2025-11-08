@@ -34,10 +34,14 @@ def get_config_dir() -> Path:
         Path object pointing to config directory
 
     Locations:
-        Linux/Mac: ~/.config/pwick/
+        macOS: ~/Library/Application Support/pwick/
+        Linux: ~/.config/pwick/ (or $XDG_CONFIG_HOME/pwick/)
         Windows: %APPDATA%/pwick/
     """
-    if sys.platform == 'win32':
+    if sys.platform == 'darwin':
+        # macOS: use Application Support directory (standard macOS location)
+        return Path.home() / 'Library' / 'Application Support' / 'pwick'
+    elif sys.platform == 'win32':
         # Windows: use APPDATA
         appdata = os.getenv('APPDATA')
         if appdata:
@@ -46,7 +50,7 @@ def get_config_dir() -> Path:
             # Fallback to home directory
             return Path.home() / 'pwick'
     else:
-        # Linux/Mac: use XDG_CONFIG_HOME or default to ~/.config
+        # Linux/Unix: use XDG_CONFIG_HOME or default to ~/.config
         xdg_config = os.getenv('XDG_CONFIG_HOME')
         if xdg_config:
             return Path(xdg_config) / 'pwick'

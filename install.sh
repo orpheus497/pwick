@@ -4,8 +4,9 @@
 
 set -e
 
+VERSION=$(cat VERSION 2>/dev/null || echo "unknown")
 echo "======================================"
-echo "  pwick v2.1.0 Local Setup Script"
+echo "  pwick v$VERSION Local Setup Script"
 echo "======================================"
 echo ""
 

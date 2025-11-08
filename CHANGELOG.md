@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Missing QComboBox import in main_window.py preventing application startup
 - Unused QFlowLayout import in entry_dialog.py
+- Version number inconsistency across package files synchronized to 2.4.0
+- Python 3.9 compatibility issue with modern type hints (added `from __future__ import annotations`)
+- macOS configuration directory now uses standard `~/Library/Application Support/pwick/` instead of Linux-style `~/.config/`
+- Clipboard operations now include comprehensive error handling with user-friendly messages
+- Install scripts now dynamically read version from VERSION file instead of hardcoded strings
 
 ### Added
 - Input length validation for all text fields to prevent memory exhaustion attacks
@@ -20,11 +25,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive test suite for backup module (test_backup.py)
 - Comprehensive test suite for logging module (test_logging.py)
 - Belt-and-suspenders validation in entry save logic
+- Error handling for clipboard operations with platform-specific installation instructions
+- Linux clipboard dependency documentation in README (xclip/xsel requirements)
+- macOS officially supported and documented (updated platform badge)
+- Safe clipboard copy wrapper method with automatic error recovery
+
+### Changed
+- Version updated from 2.3.0 to 2.4.0 across all files
+- Platform support badge updated to include macOS (Windows | Linux | macOS)
+- Configuration directory structure now platform-aware with proper macOS support
+- Install scripts improved with dynamic version reading for maintainability
+- Clipboard error messages provide actionable platform-specific installation commands
 
 ### Security
 - Input validation prevents potential memory exhaustion attacks via oversized field data
 - Character counters provide user feedback before hitting limits
 - Validation occurs at UI level (setMaxLength) and business logic level (save validation)
+- Clipboard operations fail gracefully without exposing sensitive data
+
+### Documentation
+- Added Linux clipboard requirements section to README
+- Updated platform badge to include macOS
+- Improved installation documentation with platform-specific requirements
+- Added Wayland compatibility notes for Linux users
 
 ## [2.3.0] - 2025-11-08
 
