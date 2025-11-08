@@ -7,6 +7,7 @@ import json
 import os
 import base64
 import uuid
+import hashlib
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any, TypedDict
 
@@ -32,6 +33,11 @@ class VaultAuthenticationError(VaultError):
     pass
 
 
+class VaultIntegrityError(VaultError):
+    """Raised when vault file integrity check fails."""
+    pass
+
+
 class Argon2Params(TypedDict):
     time_cost: int
     memory_cost: int
@@ -48,6 +54,7 @@ class Entry(TypedDict):
     notes: str
     created_at: str
     updated_at: str
+    last_password_change: str
     tags: List[str]
     pinned: bool
     password_history: List[Dict[str, str]]
@@ -101,12 +108,25 @@ def _decrypt_data(encrypted_data: Dict[str, str], key: bytes) -> bytes:
     aesgcm = AESGCM(key)
     nonce = base64.b64decode(encrypted_data['nonce'])
     ciphertext = base64.b64decode(encrypted_data['ciphertext'])
-    
+
     try:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)
         return plaintext
     except Exception as e:
         raise VaultAuthenticationError("Failed to decrypt vault. Incorrect master password or corrupted data.") from e
+
+
+def _compute_vault_hash(vault_data: bytes) -> str:
+    """
+    Compute SHA-256 hash of vault data for integrity verification.
+
+    Args:
+        vault_data: Raw vault JSON bytes
+
+    Returns:
+        Hex-encoded SHA-256 hash
+    """
+    return hashlib.sha256(vault_data).hexdigest()
 
 
 def create_vault(path: str, master_password: str) -> Vault:
@@ -140,37 +160,56 @@ def create_vault(path: str, master_password: str) -> Vault:
 
 def save_vault(path: str, vault_obj: Vault, master_password: str) -> None:
     """
-    Save vault to encrypted file.
+    Save vault to encrypted file with integrity verification.
     """
     salt = os.urandom(ARGON2_SALT_LEN)
     params = vault_obj['metadata']['argon2_params']
     key = _derive_key(master_password, salt, params)
-    
+
     vault_json = json.dumps(vault_obj, indent=2)
-    encrypted = _encrypt_data(vault_json.encode('utf-8'), key)
-    
+    vault_bytes = vault_json.encode('utf-8')
+
+    # Compute integrity hash
+    integrity_hash = _compute_vault_hash(vault_bytes)
+
+    encrypted = _encrypt_data(vault_bytes, key)
+
     vault_file = {
         'salt': base64.b64encode(salt).decode('utf-8'),
         'argon2_params': params,
+        'integrity_hash': integrity_hash,
         'data': encrypted
     }
-    
+
     with open(path, 'w') as f:
         json.dump(vault_file, f, indent=2)
 
 
-def load_vault(path: str, master_password: str) -> Vault:
+def load_vault(path: str, master_password: str, verify_integrity: bool = True) -> Vault:
     """
-    Load and decrypt vault from file.
+    Load and decrypt vault from file with integrity verification.
+
+    Args:
+        path: Path to vault file
+        master_password: Master password for decryption
+        verify_integrity: Whether to verify file integrity (default: True)
+
+    Returns:
+        Decrypted vault object
+
+    Raises:
+        VaultError: If vault file not found
+        VaultAuthenticationError: If decryption fails (wrong password)
+        VaultIntegrityError: If integrity check fails
     """
     if not os.path.exists(path):
         raise VaultError(f"Vault not found at {path}")
-    
+
     with open(path, 'r') as f:
         vault_file = json.load(f)
-    
+
     salt = base64.b64decode(vault_file['salt'])
-    
+
     # For backward compatibility with version 1.0 vaults that don't have params stored
     params = vault_file.get('argon2_params', {
         'time_cost': 3,
@@ -180,11 +219,20 @@ def load_vault(path: str, master_password: str) -> Vault:
     })
 
     key = _derive_key(master_password, salt, params)
-    
+
     vault_json = _decrypt_data(vault_file['data'], key)
-    
+
+    # Verify integrity if enabled and hash present
+    if verify_integrity and 'integrity_hash' in vault_file:
+        computed_hash = _compute_vault_hash(vault_json)
+        stored_hash = vault_file['integrity_hash']
+        if computed_hash != stored_hash:
+            raise VaultIntegrityError(
+                "Vault integrity check failed. File may be corrupted or tampered with."
+            )
+
     vault: Vault = json.loads(vault_json.decode('utf-8'))
-    
+
     return vault
 
 
@@ -193,7 +241,19 @@ def add_entry(vault: Vault, title: str, username: str = "",
               tags: Optional[List[str]] = None, pinned: bool = False) -> str:
     """
     Add a new entry to the vault.
-    Returns the entry ID.
+
+    Args:
+        vault: Vault object to add entry to
+        title: Entry title
+        username: Username (default: "")
+        password: Password (default: "")
+        notes: Notes (default: "")
+        entry_type: Entry type - "password" or "note" (default: "password")
+        tags: List of tags (default: None, creates empty list)
+        pinned: Whether entry is pinned (default: False)
+
+    Returns:
+        The entry ID (UUID string)
     """
     entry_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -207,6 +267,7 @@ def add_entry(vault: Vault, title: str, username: str = "",
         'notes': notes,
         'created_at': now,
         'updated_at': now,
+        'last_password_change': now,  # Initially set to creation time
         'tags': tags if tags is not None else [],
         'pinned': pinned,
         'password_history': []
@@ -219,8 +280,15 @@ def add_entry(vault: Vault, title: str, username: str = "",
 def update_entry(vault: Vault, entry_id: str, **kwargs: Any) -> bool:
     """
     Update an existing entry.
-    If password is being updated, saves old password to history.
-    Returns True if entry was found and updated, False otherwise.
+    If password is being updated, saves old password to history and updates last_password_change.
+
+    Args:
+        vault: Vault object containing the entry
+        entry_id: ID of entry to update
+        **kwargs: Fields to update (e.g., title="New Title", password="newpass")
+
+    Returns:
+        True if entry was found and updated, False otherwise
     """
     for entry in vault['entries']:
         if entry['id'] == entry_id:
@@ -229,6 +297,9 @@ def update_entry(vault: Vault, entry_id: str, **kwargs: Any) -> bool:
                 old_password = entry.get('password', '')
                 if old_password:  # Only save non-empty passwords
                     add_password_to_history(entry, old_password)
+
+                # Update last password change timestamp
+                entry['last_password_change'] = datetime.now(timezone.utc).isoformat()
 
             for key, value in kwargs.items():
                 if key in entry:
@@ -321,14 +392,14 @@ def import_encrypted(source_path: str, target_path: str, master_password: str) -
 
 def migrate_entry_to_v2(entry: Entry) -> Entry:
     """
-    Migrate an entry from v1.x format to v2.x format.
+    Migrate an entry from v1.x/v2.0 format to v2.2 format.
     Adds missing fields with default values for backwards compatibility.
 
     Args:
         entry: Entry dict to migrate
 
     Returns:
-        Migrated entry with all v2.x fields
+        Migrated entry with all v2.2 fields
     """
     # Add tags field if missing
     if 'tags' not in entry:
@@ -345,6 +416,10 @@ def migrate_entry_to_v2(entry: Entry) -> Entry:
     # Ensure type field exists (defaults to password)
     if 'type' not in entry:
         entry['type'] = 'password'
+
+    # Add last_password_change if missing (use created_at or current time)
+    if 'last_password_change' not in entry:
+        entry['last_password_change'] = entry.get('created_at', datetime.now(timezone.utc).isoformat())
 
     return entry
 

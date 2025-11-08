@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Vault file integrity verification using SHA-256 hashing to detect corruption and tampering
+- Password change tracking with `last_password_change` timestamp field in entries
+- Configurable password history limit via settings (default: 5, range: 1-20)
+- Password expiration tracking system with configurable expiration days (default: 90 days)
+- Password expiration warning system with configurable warning period (default: 14 days)
+- Automatic backup system with configurable frequency (daily, weekly, on_change)
+- Automatic backup rotation keeping configurable number of recent backups (default: 5)
+- Backup management module (backup.py) for creating, listing, and restoring backups
+- Comprehensive logging system with rotating file handler and configurable log levels
+- Sensitive data sanitization filter for logs preventing password leakage
+- Logging configuration module (logging_config.py) for centralized logging setup
+- Light theme support in addition to existing dark theme
+- Theme management module (themes.py) for centralized theme handling
+- Logging integration in main window for vault operations (create, open, import, export, lock)
+- Theme switching on application startup based on user settings
+- Integrity error handling with user-friendly error messages
+- New settings for password history limit, expiration tracking, auto-backup, logging, and sorting
+- Settings validation for all new configuration options
+- TESTING.md documentation with comprehensive testing procedures and guidelines
+- Log file patterns and backup directory patterns added to .gitignore
+- Tag management UI in entry dialog with autocomplete and removable tag chips
+- Pin checkbox in entry dialog for marking entries as favorites
+- Password age display in entry dialog showing time since last password change
+- Visual pin indicator (📌 emoji) for pinned entries in entry lists
+- Tag display in entry lists showing all tags for each entry
+- Automatic sorting with pinned entries at the top of lists
+- Tag Manager dialog for centralized tag management (rename, merge, delete tags)
+- Tag Manager accessible from Tools menu
+- Password Management tab in Settings dialog for history and expiration settings
+- Backup tab in Settings dialog for auto-backup configuration
+- Logging tab in Settings dialog for log level and file size configuration
+- Theme selection in Appearance tab of Settings dialog (Dark/Light)
+- Backup location browser in Settings dialog for custom backup paths
+- Entry sorting options with 6 modes (A-Z, Z-A, Date Created/Modified Newest/Oldest)
+- Sort dropdown in password list interface for user-selectable sorting
+- Advanced filtering by pinned status (All, Pinned Only, Unpinned Only)
+- Advanced filtering by tag with dynamic tag dropdown populated from vault
+- Combined filtering supporting simultaneous text search, pinned status, and tag filtering
+- Tag filter dropdown automatically updates when tags are added, renamed, merged, or deleted
+
+### Changed
+- Vault Entry TypedDict now includes `last_password_change` field for password age tracking
+- Vault file format now includes `integrity_hash` field for file integrity verification
+- Vault load function now verifies integrity hash when present (backwards compatible)
+- Vault save function now computes and stores integrity hash
+- Entry update function now updates `last_password_change` when password changes
+- Entry migration function updated to handle v2.2 format with new fields
+- Settings default dictionary expanded with new configuration options
+- Settings validation function expanded to validate all new settings
+- Configuration module updated to support 13 new settings for enhanced functionality
+- Theme stylesheet extracted from main_window.py to themes.py module for better organization
+- Application startup now initializes logging system before creating UI
+- Application startup now loads and applies theme from user settings
+- Main window imports logging_config and themes modules
+- CSV export function verified present and working (not a bug as initially assessed)
+- Entry dialog (entry_dialog.py) completely rewritten with tag management and pin functionality
+- Entry dialog now accepts `all_tags` parameter for tag autocomplete
+- Entry dialog now returns tags and pinned status in result data
+- Main window `_add_password_entry()` now passes tags and pinned to vault
+- Main window `_edit_password_entry()` now passes tags and pinned to vault
+- Main window `_refresh_lists()` now shows pin indicators and tag displays
+- Main window entry lists now sort pinned entries at the top automatically
+- Settings dialog now has 7 tabs instead of 4 (added Password Management, Backup, Logging)
+- Settings dialog Appearance tab now allows theme switching (Dark/Light)
+- Settings dialog now includes backup location browser for custom backup paths
+- Settings dialog expanded from 355 lines to 560+ lines with new functionality
+- Main window password list UI now includes sorting and filtering controls
+- Entry list sorting now configurable with 6 different sorting modes
+- _refresh_lists() method enhanced with dynamic sorting based on user selection
+- _filter_lists() method enhanced with pinned status and tag filtering
+- _populate_tag_filter() method added to dynamically populate tag dropdown
+- Filtering now supports combining text search, pinned status, and tag selection
+
+### Fixed
+- Vault integrity verification prevents use of corrupted or tampered vault files
+- Password change timestamps enable accurate password age calculation
+- Backup system prevents data loss from user forgetfulness or system failures
+
+### Security
+- Vault file integrity verification detects unauthorized modifications
+- Logging system sanitizes sensitive data preventing password exposure in logs
+- Password expiration tracking encourages regular password rotation
+- Automatic backups reduce risk of data loss from corruption or accidents
+
+### Documentation
+- Created comprehensive TESTING.md with unit, integration, security, and manual testing procedures
+- Updated SECURITY.md to reference correct dependency (PySide6 instead of PyQt5)
+- Updated .gitignore to exclude log files, backup files, and development artifacts
+- Enhanced code documentation with detailed docstrings in new modules
+
+### Migration
+- All vault format changes maintain backwards compatibility through migration functions
+- Existing vaults load correctly and automatically migrate to new format on save
+- New fields added to entries with sensible defaults (timestamps, empty lists, false booleans)
+- Settings migration automatically adds new settings with defaults when loading old configs
+
 ## [2.1.0] - 2025-10-31
 
 ### Added

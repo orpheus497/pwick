@@ -7,6 +7,7 @@ import sys
 import secrets
 import string
 import base64
+import logging
 from typing import Optional, Dict, Any, List
 from datetime import datetime, date
 
@@ -25,12 +26,18 @@ import csv
 
 from .. import vault
 from ..config import load_settings, save_settings
+from ..logging_config import setup_logging, get_logger
+from .themes import get_stylesheet
 from .widgets.welcome_dialog import WelcomeDialog
 from .widgets.master_password_dialog import MasterPasswordDialog
 from .widgets.entry_dialog import EntryDialog
 from .widgets.settings_dialog import SettingsDialog
 from .widgets.security_audit_dialog import SecurityAuditDialog
 from .widgets.password_history_dialog import PasswordHistoryDialog
+from .widgets.tag_manager_dialog import TagManagerDialog
+
+# Initialize module logger
+logger = get_logger(__name__)
 
 
 class EncryptedClipboard:
@@ -91,127 +98,6 @@ class EncryptedClipboard:
         except Exception:
             # Decryption failed or invalid format
             return None
-
-
-# Dark theme stylesheet with black, grey, white, and red accents
-DARK_STYLESHEET = """
-QMainWindow, QDialog, QWidget {
-    background-color: #1a1a1a;
-    color: #e0e0e0;
-}
-
-QLabel {
-    color: #e0e0e0;
-    font-size: 12px;
-}
-
-QPushButton {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QPushButton:hover {
-    background-color: #3d3d3d;
-    border: 1px solid #c62828;
-}
-
-QPushButton:pressed {
-    background-color: #c62828;
-}
-
-QPushButton#primaryButton {
-    background-color: #c62828;
-    border: 1px solid #b71c1c;
-}
-
-QPushButton#primaryButton:hover {
-    background-color: #d32f2f;
-}
-
-QPushButton#primaryButton:pressed {
-    background-color: #b71c1c;
-}
-
-QLineEdit, QTextEdit {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    padding: 6px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QLineEdit:focus, QTextEdit:focus {
-    border: 1px solid #c62828;
-}
-
-QListWidget {
-    background-color: #2d2d2d;
-    color: #e0e0e0;
-    border: 1px solid #404040;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
-QListWidget::item {
-    padding: 8px;
-    border-bottom: 1px solid #404040;
-}
-
-QListWidget::item:selected {
-    background-color: #c62828;
-    color: #ffffff;
-}
-
-QListWidget::item:hover {
-    background-color: #3d3d3d;
-}
-
-QGroupBox {
-    border: 1px solid #404040;
-    border-radius: 4px;
-    margin-top: 12px;
-    padding-top: 12px;
-    color: #e0e0e0;
-    font-weight: bold;
-}
-
-QGroupBox::title {
-    subcontrol-origin: margin;
-    subcontrol-position: top left;
-    padding: 0 8px;
-}
-
-QCheckBox {
-    color: #e0e0e0;
-    spacing: 8px;
-}
-
-QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-    border: 1px solid #404040;
-    border-radius: 3px;
-    background-color: #2d2d2d;
-}
-
-QCheckBox::indicator:checked {
-    background-color: #c62828;
-    border: 1px solid #b71c1c;
-}
-
-QMessageBox {
-    background-color: #1a1a1a;
-}
-
-QMessageBox QLabel {
-    color: #e0e0e0;
-}
-"""
 
 
 class MainWindow(QMainWindow):
@@ -364,7 +250,50 @@ class MainWindow(QMainWindow):
         self.search_passwords.setPlaceholderText("Search passwords...")
         self.search_passwords.textChanged.connect(self._filter_lists)
         left_panel.addWidget(self.search_passwords)
-        
+
+        # Sorting and filtering controls
+        controls_layout = QHBoxLayout()
+
+        sort_label = QLabel("Sort:")
+        controls_layout.addWidget(sort_label)
+
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItems([
+            "Alphabetical (A-Z)",
+            "Alphabetical (Z-A)",
+            "Date Created (Newest)",
+            "Date Created (Oldest)",
+            "Date Modified (Newest)",
+            "Date Modified (Oldest)"
+        ])
+        self.sort_combo.currentIndexChanged.connect(self._refresh_lists)
+        controls_layout.addWidget(self.sort_combo)
+
+        controls_layout.addSpacing(10)
+
+        filter_label = QLabel("Filter:")
+        controls_layout.addWidget(filter_label)
+
+        self.filter_combo = QComboBox()
+        self.filter_combo.addItems([
+            "All Entries",
+            "Pinned Only",
+            "Unpinned Only"
+        ])
+        self.filter_combo.currentIndexChanged.connect(self._filter_lists)
+        controls_layout.addWidget(self.filter_combo)
+
+        tag_label = QLabel("Tag:")
+        controls_layout.addWidget(tag_label)
+
+        self.tag_filter_combo = QComboBox()
+        self.tag_filter_combo.addItem("All Tags")
+        self.tag_filter_combo.currentIndexChanged.connect(self._filter_lists)
+        controls_layout.addWidget(self.tag_filter_combo)
+
+        controls_layout.addStretch()
+        left_panel.addLayout(controls_layout)
+
         self.entry_list = QListWidget()
         self.entry_list.currentItemChanged.connect(self._on_entry_selected)
         left_panel.addWidget(self.entry_list)
@@ -519,6 +448,12 @@ class MainWindow(QMainWindow):
         # Tools menu
         tools_menu = menubar.addMenu("&Tools")
 
+        tag_manager_action = QAction("Manage Tags...", self)
+        tag_manager_action.triggered.connect(self._open_tag_manager)
+        tools_menu.addAction(tag_manager_action)
+
+        tools_menu.addSeparator()
+
         settings_action = QAction("Settings...", self)
         settings_action.triggered.connect(self._open_settings_dialog)
         tools_menu.addAction(settings_action)
@@ -634,6 +569,7 @@ class MainWindow(QMainWindow):
             sys.exit(0)
 
     def _create_vault(self, path: str):
+        logger.info(f"Creating new vault at: {path}")
         password_dialog = MasterPasswordDialog(confirm_mode=True, parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             try:
@@ -642,14 +578,18 @@ class MainWindow(QMainWindow):
                 self.vault_path = path
                 self.master_password = password_dialog.password
                 self._refresh_lists()
+                logger.info("Vault created successfully")
                 QMessageBox.information(self, "Success", "Vault created successfully!")
             except Exception as e:
+                logger.error(f"Failed to create vault: {e}", exc_info=True)
                 QMessageBox.critical(self, "Error", f"Failed to create vault: {e}")
                 self._show_welcome()
         else:
+            logger.info("Vault creation cancelled by user")
             self._show_welcome()
 
     def _import_vault(self, source_path: str):
+        logger.info(f"Importing vault from: {source_path}")
         password_dialog = MasterPasswordDialog(parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             target_path, _ = QFileDialog.getSaveFileName(
@@ -666,19 +606,25 @@ class MainWindow(QMainWindow):
                     self.vault_path = target_path
                     self.master_password = password_dialog.password
                     self._refresh_lists()
+                    logger.info(f"Vault imported successfully to: {target_path}")
                     QMessageBox.information(self, "Success", "Vault imported successfully!")
                 except vault.VaultAuthenticationError:
+                    logger.warning("Vault import failed: Incorrect master password")
                     QMessageBox.critical(self, "Error", "Incorrect master password.")
                     self._show_welcome()
                 except Exception as e:
+                    logger.error(f"Failed to import vault: {e}", exc_info=True)
                     QMessageBox.critical(self, "Error", f"Failed to import vault: {e}")
                     self._show_welcome()
             else:
+                logger.info("Vault import cancelled by user")
                 self._show_welcome()
         else:
+            logger.info("Vault import cancelled by user")
             self._show_welcome()
 
     def _open_vault(self, path: str):
+        logger.info(f"Opening vault at: {path}")
         password_dialog = MasterPasswordDialog(parent=self)
         if password_dialog.exec() == QDialog.Accepted:
             try:
@@ -687,34 +633,128 @@ class MainWindow(QMainWindow):
                 self.vault_path = path
                 self.master_password = password_dialog.password
                 self._refresh_lists()
+                logger.info(f"Vault opened successfully with {len(self.vault_data['entries'])} entries")
             except vault.VaultAuthenticationError:
+                logger.warning("Vault open failed: Incorrect master password")
                 QMessageBox.critical(self, "Error", "Incorrect master password.")
                 self._show_welcome()
+            except vault.VaultIntegrityError as e:
+                logger.error(f"Vault integrity check failed: {e}")
+                QMessageBox.critical(self, "Integrity Error",
+                    "Vault integrity check failed. The file may be corrupted or tampered with.\n\n"
+                    "Do NOT use this vault. Restore from a backup if available.")
+                self._show_welcome()
             except Exception as e:
+                logger.error(f"Failed to open vault: {e}", exc_info=True)
                 QMessageBox.critical(self, "Error", f"Failed to open vault: {e}")
                 self._show_welcome()
         else:
+            logger.info("Vault open cancelled by user")
             self._show_welcome()
+
+    def _get_sort_key(self, entry: dict):
+        """Get sort key based on current sort mode."""
+        sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+
+        # Always put pinned entries first
+        pinned_priority = not entry.get('pinned', False)
+
+        if sort_mode == 0:  # Alphabetical (A-Z)
+            return (pinned_priority, entry['title'].lower())
+        elif sort_mode == 1:  # Alphabetical (Z-A)
+            return (pinned_priority, entry['title'].lower()), True  # Reverse flag
+        elif sort_mode == 2:  # Date Created (Newest)
+            return (pinned_priority, entry.get('created_at', '')), True
+        elif sort_mode == 3:  # Date Created (Oldest)
+            return (pinned_priority, entry.get('created_at', ''))
+        elif sort_mode == 4:  # Date Modified (Newest)
+            return (pinned_priority, entry.get('updated_at', '')), True
+        elif sort_mode == 5:  # Date Modified (Oldest)
+            return (pinned_priority, entry.get('updated_at', ''))
+        else:
+            return (pinned_priority, entry['title'].lower())
 
     def _refresh_lists(self):
         self.entry_list.clear()
         self.note_list.clear()
         if self.vault_data:
-            for entry in self.vault_data['entries']:
-                item = QListWidgetItem(entry['title'])
+            # Get sort mode and determine if reverse is needed
+            sort_mode = self.sort_combo.currentIndex() if hasattr(self, 'sort_combo') else 0
+            reverse = sort_mode in [1, 2, 4]  # Z-A, Newest Created, Newest Modified
+
+            # Sort entries based on selected mode
+            entries = sorted(
+                self.vault_data['entries'],
+                key=lambda e: (not e.get('pinned', False),
+                              e['title'].lower() if sort_mode <= 1 else e.get('created_at' if sort_mode <= 3 else 'updated_at', '')),
+                reverse=reverse
+            )
+
+            for entry in entries:
+                # Build display text with pin indicator and tags
+                display_text = entry['title']
+
+                # Add pin indicator
+                if entry.get('pinned', False):
+                    display_text = f"📌 {display_text}"
+
+                # Add tags (if any)
+                tags = entry.get('tags', [])
+                if tags:
+                    tag_text = ', '.join(tags)
+                    display_text = f"{display_text} [{tag_text}]"
+
+                item = QListWidgetItem(display_text)
                 item.setData(Qt.UserRole, entry['id'])
+
                 if entry.get('type', 'password') == 'password':
                     self.entry_list.addItem(item)
                 elif entry.get('type') == 'note':
                     self.note_list.addItem(item)
+
+        # Populate tag filter with current tags
+        self._populate_tag_filter()
+
         self._filter_lists()
 
     def _filter_lists(self):
+        # Get filter mode
+        filter_mode = self.filter_combo.currentIndex() if hasattr(self, 'filter_combo') else 0
+        # 0 = All Entries, 1 = Pinned Only, 2 = Unpinned Only
+
+        # Get tag filter
+        selected_tag = None
+        if hasattr(self, 'tag_filter_combo'):
+            tag_text = self.tag_filter_combo.currentText()
+            if tag_text != "All Tags":
+                selected_tag = tag_text
+
+        # Filter passwords
         password_filter = self.search_passwords.text().lower()
         for i in range(self.entry_list.count()):
             item = self.entry_list.item(i)
-            item.setHidden(password_filter not in item.text().lower())
-            
+            entry_id = item.data(Qt.UserRole)
+            entry = self._find_entry(entry_id)
+
+            # Check text filter
+            text_match = password_filter in item.text().lower()
+
+            # Check pinned filter
+            pinned_match = True
+            if entry and filter_mode == 1:  # Pinned Only
+                pinned_match = entry.get('pinned', False)
+            elif entry and filter_mode == 2:  # Unpinned Only
+                pinned_match = not entry.get('pinned', False)
+
+            # Check tag filter
+            tag_match = True
+            if entry and selected_tag:
+                entry_tags = entry.get('tags', [])
+                tag_match = selected_tag in entry_tags
+
+            item.setHidden(not (text_match and pinned_match and tag_match))
+
+        # Filter notes
         note_filter = self.search_notes.text().lower()
         for i in range(self.note_list.count()):
             item = self.note_list.item(i)
@@ -796,9 +836,44 @@ class MainWindow(QMainWindow):
                 if entry['id'] == entry_id:
                     return entry
         return None
+
+    def _get_all_tags(self) -> list[str]:
+        """Collect all unique tags from vault entries for autocomplete."""
+        if not self.vault_data:
+            return []
+
+        all_tags = set()
+        for entry in self.vault_data['entries']:
+            tags = entry.get('tags', [])
+            if tags:
+                all_tags.update(tags)
+
+        return sorted(list(all_tags))
+
+    def _populate_tag_filter(self):
+        """Populate the tag filter dropdown with all available tags."""
+        if not hasattr(self, 'tag_filter_combo'):
+            return
+
+        # Save current selection
+        current_tag = self.tag_filter_combo.currentText()
+
+        # Clear and repopulate
+        self.tag_filter_combo.clear()
+        self.tag_filter_combo.addItem("All Tags")
+
+        all_tags = self._get_all_tags()
+        for tag in all_tags:
+            self.tag_filter_combo.addItem(tag)
+
+        # Restore selection if it still exists
+        index = self.tag_filter_combo.findText(current_tag)
+        if index >= 0:
+            self.tag_filter_combo.setCurrentIndex(index)
     
     def _add_password_entry(self):
-        dialog = EntryDialog(settings=self.settings, parent=self)
+        all_tags = self._get_all_tags()
+        dialog = EntryDialog(settings=self.settings, all_tags=all_tags, parent=self)
         if dialog.exec() == QDialog.Accepted:
             data = dialog.result_data
             vault.add_entry(
@@ -807,7 +882,9 @@ class MainWindow(QMainWindow):
                 data['username'],
                 data['password'],
                 data['notes'],
-                entry_type='password'
+                entry_type='password',
+                tags=data.get('tags', []),
+                pinned=data.get('pinned', False)
             )
             self._save_vault()
             self._refresh_lists()
@@ -819,7 +896,8 @@ class MainWindow(QMainWindow):
 
         entry = self._find_entry(self.current_entry_id)
         if entry and entry.get('type', 'password') == 'password':
-            dialog = EntryDialog(entry_data=entry, settings=self.settings, parent=self)
+            all_tags = self._get_all_tags()
+            dialog = EntryDialog(entry_data=entry, settings=self.settings, all_tags=all_tags, parent=self)
             if dialog.exec() == QDialog.Accepted:
                 data = dialog.result_data
                 vault.update_entry(
@@ -933,6 +1011,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(self, "Error", f"Failed to export vault: {e}")
     
     def _lock_vault(self):
+        logger.info("Locking vault")
         self.vault_data = None
         self.vault_path = None
         self.master_password = None
@@ -942,6 +1021,21 @@ class MainWindow(QMainWindow):
         self.note_list.clear()
         self.auto_lock_timer.stop()
         self._show_welcome()
+        logger.info("Vault locked successfully")
+
+    def _open_tag_manager(self):
+        """Open the tag manager dialog."""
+        if not self.vault_data:
+            QMessageBox.warning(self, "No Vault", "Please open or create a vault first.")
+            return
+
+        dialog = TagManagerDialog(self.vault_data, self)
+        dialog.exec()
+
+        # If tags were modified, save vault and refresh lists
+        if dialog.modified:
+            self._save_vault()
+            self._refresh_lists()
 
     def _open_settings_dialog(self):
         """Open the settings dialog."""
@@ -1078,10 +1172,31 @@ class MainWindow(QMainWindow):
 
 def run():
     """Run the application."""
+    # Load settings to get theme and logging preferences
+    settings = load_settings()
+
+    # Setup logging system
+    log_level = settings.get('log_level', 'INFO')
+    log_max_size = settings.get('log_max_size_mb', 10) * 1024 * 1024  # Convert MB to bytes
+    setup_logging(level=log_level, max_bytes=log_max_size)
+
+    logger.info("Starting pwick application")
+
+    # Create application
     app = QApplication(sys.argv)
-    app.setStyleSheet(DARK_STYLESHEET)
-    
+
+    # Apply theme from settings
+    theme = settings.get('theme', 'dark')
+    stylesheet = get_stylesheet(theme)
+    app.setStyleSheet(stylesheet)
+    logger.info(f"Applied {theme} theme")
+
+    # Create and show main window
     window = MainWindow()
     window.show()
-    
-    sys.exit(app.exec())
+    logger.info("Main window displayed")
+
+    # Run application
+    exit_code = app.exec()
+    logger.info(f"Application exiting with code {exit_code}")
+    sys.exit(exit_code)

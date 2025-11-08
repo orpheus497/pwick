@@ -142,10 +142,12 @@ pwick is designed with security as the top priority. This document outlines the 
 
 **Dependencies**:
 All dependencies are from trusted, well-maintained projects:
-- PyQt5: Official Qt bindings for Python
-- cryptography: Maintained by the Python Cryptographic Authority
-- argon2-cffi: Official Python bindings for Argon2
-- pyperclip: Simple clipboard library
+- PySide6: Official Qt6 bindings for Python (LGPL v3 license)
+- cryptography: Maintained by the Python Cryptographic Authority (Apache 2.0 / BSD license)
+- argon2-cffi: Official Python bindings for Argon2 (MIT license)
+- pyperclip: Cross-platform clipboard library (BSD 3-Clause license)
+- zxcvbn: Password strength estimation (MIT license)
+- tomli/tomli-w: TOML configuration file support (MIT license)
 
 **Regular Updates**:
 Dependencies should be updated regularly for security patches:
