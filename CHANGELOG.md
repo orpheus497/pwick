@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2025-11-08
+
 ### Added
 - Vault file integrity verification using SHA-256 hashing to detect corruption and tampering
 - Password change tracking with `last_password_change` timestamp field in entries

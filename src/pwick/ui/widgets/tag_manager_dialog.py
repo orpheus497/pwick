@@ -190,10 +190,11 @@ class TagManagerDialog(QDialog):
 
         # Confirm merge
         other_tags = [t for t in tags_to_merge if t != keep_tag]
+        tags_list = ', '.join(f"'{t}'" for t in other_tags)
         reply = QMessageBox.question(
             self,
             "Confirm Merge",
-            f"Merge tags {', '.join(f\"'{t}\"\" for t in other_tags)} into '{keep_tag}'?\n\n"
+            f"Merge tags {tags_list} into '{keep_tag}'?\n\n"
             f"This will remove the other tags and replace them with '{keep_tag}'.",
             QMessageBox.Yes | QMessageBox.No
         )
