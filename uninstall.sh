@@ -16,9 +16,9 @@ if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
     echo "Removing local environment..."
     rm -rf venv
     rm -f run_pwick.sh
-    
+
     echo ""
-    echo "✓ pwick local environment has been removed."
+    echo "[SUCCESS] pwick local environment has been removed."
     echo ""
     echo "Note: Your vault files are NOT deleted."
     echo "They remain at their saved locations."
