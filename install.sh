@@ -63,7 +63,7 @@ EOL
 chmod +x "$LAUNCHER_SCRIPT"
 
 echo ""
-echo "✓ Setup complete!"
+echo "[SUCCESS] Setup complete!"
 echo ""
 echo "To run pwick, execute:"
 echo "  ./$LAUNCHER_SCRIPT"

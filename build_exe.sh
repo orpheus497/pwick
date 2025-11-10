@@ -54,6 +54,14 @@ pip install -e . --quiet
 echo "Dependencies installed."
 echo ""
 
+# Check for PyInstaller spec file
+if [ ! -f "pwick.spec" ]; then
+    echo "Error: pwick.spec file not found."
+    echo "Please ensure pwick.spec exists in the project root."
+    exit 1
+fi
+echo ""
+
 # Clean previous builds
 echo "Cleaning previous builds..."
 rm -rf build dist
